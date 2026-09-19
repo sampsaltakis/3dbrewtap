@@ -16,7 +16,7 @@ a { color: inherit; text-decoration: none; }
   backdrop-filter: blur(12px); border-bottom: 1px solid #e8e2d9;
 }
 .brand { display: flex; align-items: center; gap: 10px; font-weight: 800; }
-.mark { width: 72px; height: 40px; }
+.lockup { height: 64px; width: auto; display: block; }
 .wordmark span { color: var(--orange); }
 .nav nav { display: flex; gap: 22px; font-weight: 600; }
 .btn {
@@ -119,6 +119,7 @@ footer { padding: 28px 7% 40px; display: flex; justify-content: space-between; c
   .hero, .steps, .shape-grid, .builder-grid { grid-template-columns: 1fr; }
   .nav nav { display: none; }
   .hero { padding-top: 36px; }
+  .lockup { height: 48px; }
 }
 @media (prefers-reduced-motion: reduce) {
   .shot img, .handle, .stream { animation: none; }
