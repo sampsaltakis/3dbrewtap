@@ -1,3 +1,15 @@
+const headlines = [
+  "The tap should look as good as what\u2019s in the <em>glass</em>.",
+  "Don\u2019t put a boring handle on a good <em>beer</em>.",
+  "Your beer deserves a better <em>handle</em>.",
+  "Pour the beer. Brand the <em>handle</em>.",
+  "If the tap looks generic, the beer does <em>too</em>.",
+  "Make the tap as custom as the <em>recipe</em>.",
+  "The last thing they see before they order <em>another</em>."
+];
+const heroTitle = document.querySelector(".hero-copy h1");
+if (heroTitle) heroTitle.innerHTML = headlines[Math.floor(Math.random() * headlines.length)];
+
 const handle = document.getElementById("handle");
 const art = document.getElementById("art");
 const status = document.getElementById("status");
@@ -34,7 +46,7 @@ bind("size", (e) => {
 });
 bind("rot", (e) => {
   art.style.transform = `translateX(-50%) rotate(${e.target.value}deg)`;
-  document.getElementById("rotVal").textContent = e.target.value + "°";
+  document.getElementById("rotVal").textContent = e.target.value + "\u00b0";
 });
 bind("pos", (e) => {
   art.style.top = e.target.value + "px";
