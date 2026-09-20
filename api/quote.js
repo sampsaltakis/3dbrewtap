@@ -1,5 +1,3 @@
-export const config = { runtime: "nodejs" };
-
 function escapeHtml(value) {
   return String(value)
     .replace(/&/g, "&")
@@ -8,100 +6,79 @@ function escapeHtml(value) {
     .replace(/"/g, """);
 }
 
-async function sendQuote(body) {
-  const key = process.env.RESEND_API_KEY;
-  if (!key) {
-    return {
-      status: 503,
-      json: { error: "Email is not configured yet. Add RESEND_API_KEY in Vercel." }
-    };
-  }
-
-  const name = String(body.name || "").trim();
-  const email = String(body.email || "").trim();
-  const phone = String(body.phone || "").trim();
-  const notes = String(body.notes || "").trim();
-  const source = String(body.source || "website").trim();
-  const shape = String(body.shape || "").trim();
-  const qty = String(body.qty || "1").trim();
-  const tapText = String(body.tapText || "").trim();
-  const fileName = String(body.fileName || "").trim();
-  let fileData = String(body.fileData || "");
-  const comma = fileData.indexOf(",");
-  if (fileData.startsWith("data:") && comma !== -1) fileData = fileData.slice(comma + 1);
-
-  if (!name || !email || !phone) {
-    return { status: 400, json: { error: "Name, email, and phone are required." } };
-  }
-
-  const attachments = [];
-  if (fileData && fileName) {
-    if (fileData.length > 3500000) {
-      return { status: 413, json: { error: "Logo is too large. Use a file under about 2.5 MB." } };
-    }
-    attachments.push({ filename: fileName, content: fileData });
-  }
-
-  const html =
-    "<h2>New 3DBrewTap request</h2>" +
-    "<p><strong>Source:</strong> " + escapeHtml(source) + "</p>" +
-    "<p><strong>Name:</strong> " + escapeHtml(name) + "</p>" +
-    "<p><strong>Email:</strong> " + escapeHtml(email) + "</p>" +
-    "<p><strong>Phone:</strong> " + escapeHtml(phone) + "</p>" +
-    "<p><strong>Shape:</strong> " + escapeHtml(shape || "n/a") + "</p>" +
-    "<p><strong>Qty:</strong> " + escapeHtml(qty) + "</p>" +
-    "<p><strong>Text on handle:</strong> " + escapeHtml(tapText || "n/a") + "</p>" +
-    "<p><strong>Notes:</strong><br>" + escapeHtml(notes || "none").replace(/\n/g, "<br>") + "</p>" +
-    "<p><strong>Logo attached:</strong> " + (fileName ? escapeHtml(fileName) : "no file") + "</p>";
-
-  const resp = await fetch("https://api.resend.com/emails", {
-    method: "POST",
-    headers: {
-      Authorization: "Bearer " + key,
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-      from: process.env.FROM_EMAIL || "3DBrewTap <onboarding@resend.dev>",
-      to: ["orders@3dbrewtap.com"],
-      reply_to: email,
-      subject: "New tap request from " + name,
-      html,
-      attachments
-    })
-  });
-
-  if (!resp.ok) {
-    const err = await resp.text();
-    return {
-      status: 502,
-      json: { error: "Email provider rejected the message.", detail: err.slice(0, 400) }
-    };
-  }
-
-  return { status: 200, json: { ok: true } };
-}
-
-export async function POST(request) {
+module.exports = async (req, res) => {
   try {
-    const body = await request.json();
-    const result = await sendQuote(body || {});
-    return Response.json(result.json, { status: result.status });
-  } catch (err) {
-    return Response.json({ error: err && err.message ? err.message : "Server error" }, { status: 500 });
-  }
-}
-
-export function GET() {
-  return Response.json({ error: "POST only" }, { status: 405 });
-}
-
-export function OPTIONS() {
-  return new Response(null, {
-    status: 204,
-    headers: {
-      "Access-Control-Allow-Origin": "*",
-      "Access-Control-Allow-Methods": "POST, OPTIONS",
-      "Access-Control-Allow-Headers": "Content-Type"
+    if (res && typeof res.setHeader === "function") {
+      res.setHeader("Access-Control-Allow-Origin", "*");
+      res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
+      res.setHeader("Access-Control-Allow-Headers", "Content-Type");
     }
-  });
-}
+    if (req.method === "OPTIONS") return res.status(204).end();
+    if (req.method !== "POST") return res.status(405).json({ error: "POST only" });
+
+    const key = process.env.RESEND_API_KEY;
+    if (!key) {
+      return res.status(503).json({ error: "Email is not configured yet. Add RESEND_API_KEY in Vercel." });
+    }
+
+    let body = req.body;
+    if (!body || typeof body === "string") {
+      try { body = JSON.parse(body || "{}"); } catch (e) { body = {}; }
+    }
+
+    const name = String(body.name || "").trim();
+    const email = String(body.email || "").trim();
+    const phone = String(body.phone || "").trim();
+    if (!name || !email || !phone) {
+      return res.status(400).json({ error: "Name, email, and phone are required." });
+    }
+
+    let fileData = String(body.fileData || "");
+    const comma = fileData.indexOf(",");
+    if (fileData.startsWith("data:") && comma !== -1) fileData = fileData.slice(comma + 1);
+    const fileName = String(body.fileName || "").trim();
+    const attachments = [];
+    if (fileData && fileName) {
+      if (fileData.length > 3500000) {
+        return res.status(413).json({ error: "Logo is too large. Use a file under about 2.5 MB." });
+      }
+      attachments.push({ filename: fileName, content: fileData });
+    }
+
+    const html =
+      "<h2>New 3DBrewTap request</h2>" +
+      "<p><strong>Source:</strong> " + escapeHtml(body.source || "website") + "</p>" +
+      "<p><strong>Name:</strong> " + escapeHtml(name) + "</p>" +
+      "<p><strong>Email:</strong> " + escapeHtml(email) + "</p>" +
+      "<p><strong>Phone:</strong> " + escapeHtml(phone) + "</p>" +
+      "<p><strong>Shape:</strong> " + escapeHtml(body.shape || "n/a") + "</p>" +
+      "<p><strong>Qty:</strong> " + escapeHtml(body.qty || "1") + "</p>" +
+      "<p><strong>Text on handle:</strong> " + escapeHtml(body.tapText || "n/a") + "</p>" +
+      "<p><strong>Notes:</strong><br>" + escapeHtml(body.notes || "none").replace(/\n/g, "<br>") + "</p>" +
+      "<p><strong>Logo attached:</strong> " + (fileName ? escapeHtml(fileName) : "no file") + "</p>";
+
+    const resp = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        Authorization: "Bearer " + key,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        from: process.env.FROM_EMAIL || "3DBrewTap <onboarding@resend.dev>",
+        to: ["orders@3dbrewtap.com"],
+        reply_to: email,
+        subject: "New tap request from " + name,
+        html,
+        attachments
+      })
+    });
+
+    if (!resp.ok) {
+      const err = await resp.text();
+      return res.status(502).json({ error: "Email provider rejected the message.", detail: err.slice(0, 400) });
+    }
+    return res.status(200).json({ ok: true });
+  } catch (err) {
+    return res.status(500).json({ error: err && err.message ? err.message : "Server error" });
+  }
+};
