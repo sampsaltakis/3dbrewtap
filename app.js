@@ -50,3 +50,31 @@ document.getElementById("quoteForm").addEventListener("submit", (e) => {
   }
   status.textContent = "Quote request captured. Next we connect this form to your email or shop backend.";
 });
+
+const lightbox = document.getElementById("lightbox");
+const lightboxImg = document.getElementById("lightboxImg");
+const lightboxCap = document.getElementById("lightboxCap");
+const closeLightbox = () => {
+  lightbox.classList.remove("open");
+  lightbox.setAttribute("aria-hidden", "true");
+  document.body.style.overflow = "";
+};
+
+document.querySelector(".gallery").addEventListener("click", (e) => {
+  const img = e.target.closest(".shot img");
+  if (!img) return;
+  const cap = img.closest(".shot").querySelector("figcaption");
+  lightboxImg.src = img.currentSrc || img.src;
+  lightboxImg.alt = img.alt || "";
+  lightboxCap.textContent = cap ? cap.textContent : "";
+  lightbox.classList.add("open");
+  lightbox.setAttribute("aria-hidden", "false");
+  document.body.style.overflow = "hidden";
+});
+
+lightbox.addEventListener("click", (e) => {
+  if (e.target === lightbox || e.target.closest(".lightbox-close")) closeLightbox();
+});
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape" && lightbox.classList.contains("open")) closeLightbox();
+});
