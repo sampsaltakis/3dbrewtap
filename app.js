@@ -56,6 +56,8 @@ const lightboxImg = document.getElementById("lightboxImg");
 const lightboxCap = document.getElementById("lightboxCap");
 const galleryImgs = [...document.querySelectorAll(".gallery .shot img")];
 let current = 0;
+let touchX = 0;
+let touchY = 0;
 
 const showAt = (i) => {
   current = (i + galleryImgs.length) % galleryImgs.length;
@@ -103,3 +105,17 @@ document.addEventListener("keydown", (e) => {
   if (e.key === "ArrowLeft") showAt(current - 1);
   if (e.key === "ArrowRight") showAt(current + 1);
 });
+
+lightbox.addEventListener("touchstart", (e) => {
+  if (!lightbox.classList.contains("open") || !e.changedTouches[0]) return;
+  touchX = e.changedTouches[0].clientX;
+  touchY = e.changedTouches[0].clientY;
+}, { passive: true });
+
+lightbox.addEventListener("touchend", (e) => {
+  if (!lightbox.classList.contains("open") || !e.changedTouches[0]) return;
+  const dx = e.changedTouches[0].clientX - touchX;
+  const dy = e.changedTouches[0].clientY - touchY;
+  if (Math.abs(dx) < 50 || Math.abs(dx) < Math.abs(dy)) return;
+  showAt(current + (dx < 0 ? 1 : -1));
+}, { passive: true });
