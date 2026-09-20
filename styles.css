@@ -65,11 +65,31 @@ h1 em { font-style: normal; color: var(--orange); }
   transform: scale(1.04);
   animation: alive 14s ease-in-out infinite alternate;
   transition: transform .6s ease, filter .4s ease;
+  cursor: zoom-in;
 }
 .shot:hover img { animation-play-state: paused; transform: scale(1.12); filter: saturate(1.12) contrast(1.05); }
 .shot figcaption { padding: 14px 18px 18px; font-weight: 600; }
 .shot.featured { grid-column: 1 / -1; }
 .shot.featured img { height: 480px; }
+.lightbox {
+  position: fixed; inset: 0; z-index: 80;
+  background: rgba(8,8,8,.92);
+  display: none; place-items: center;
+  padding: 56px 24px 40px;
+}
+.lightbox.open { display: grid; }
+.lightbox img {
+  max-width: min(96vw, 1400px); max-height: 82vh;
+  width: auto; height: auto; object-fit: contain;
+  border-radius: 8px;
+}
+.lightbox p { color: #fff; margin-top: 14px; font-weight: 600; text-align: center; }
+.lightbox-close {
+  position: absolute; top: 16px; right: 18px;
+  width: 44px; height: 44px; border: 0; border-radius: 999px;
+  background: #fff; color: #111; font-size: 28px; line-height: 1;
+  cursor: pointer; font: inherit; font-weight: 700;
+}
 @keyframes alive {
   from { transform: scale(1.03) translate3d(0,0,0); }
   to { transform: scale(1.1) translate3d(0,-8px,0); }
