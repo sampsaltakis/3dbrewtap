@@ -13,7 +13,13 @@ if (heroTitle) heroTitle.innerHTML = headlines[Math.floor(Math.random() * headli
 const handle = document.getElementById("handle");
 const art = document.getElementById("art");
 const status = document.getElementById("status");
+const printZone = document.getElementById("printZone");
 let uploaded = false;
+
+const markSwatch = (root, btn) => {
+  root.querySelectorAll(".swatch").forEach((s) => s.classList.remove("on"));
+  btn.classList.add("on");
+};
 
 document.getElementById("shapeChips").addEventListener("click", (e) => {
   const btn = e.target.closest(".chip");
@@ -21,6 +27,26 @@ document.getElementById("shapeChips").addEventListener("click", (e) => {
   document.querySelectorAll(".chip").forEach((c) => c.classList.remove("on"));
   btn.classList.add("on");
   handle.className = "preview-handle " + btn.dataset.shape;
+});
+
+document.getElementById("bodyColors").addEventListener("click", (e) => {
+  const btn = e.target.closest(".swatch");
+  if (!btn) return;
+  markSwatch(e.currentTarget, btn);
+  handle.style.background = btn.dataset.color;
+});
+
+document.getElementById("artColors").addEventListener("click", (e) => {
+  const btn = e.target.closest(".swatch");
+  if (!btn) return;
+  markSwatch(e.currentTarget, btn);
+  if (!uploaded) art.style.backgroundImage = "";
+  art.style.backgroundColor = btn.dataset.color;
+  art.style.color = btn.dataset.ink || "#111";
+});
+
+document.getElementById("printArea").addEventListener("change", (e) => {
+  printZone.classList.toggle("on", e.target.checked);
 });
 
 document.getElementById("logoFile").addEventListener("change", (e) => {
