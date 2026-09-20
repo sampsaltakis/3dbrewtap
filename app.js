@@ -21,33 +21,27 @@ const markSwatch = (root, btn) => {
   btn.classList.add("on");
 };
 
-const fileToPayload = (file) => new Promise((resolve, reject) => {
-  if (!file) return resolve({});
-  if (file.size > 2500000) return reject(new Error("Logo is too large. Use a file under 2.5 MB."));
-  const reader = new FileReader();
-  reader.onerror = () => reject(new Error("Could not read the file."));
-  reader.onload = () => resolve({
-    fileName: file.name,
-    fileType: file.type,
-    fileData: String(reader.result || "")
-  });
-  reader.readAsDataURL(file);
-});
-
-const postQuote = async (payload, statusEl) => {
+const postQuote = async (fields, file, statusEl) => {
   statusEl.textContent = "Sending…";
-  const res = await fetch("/api/quote", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload)
-  });
-  const raw = await res.text();
-  let data = {};
-  try { data = JSON.parse(raw); } catch (e) { data = {}; }
-  if (!res.ok) {
-    throw new Error(data.error || data.detail || ("Could not send the request (" + res.status + ")."));
+  const fd = new FormData();
+  fd.append("_subject", "New tap request from " + fields.name);
+  fd.append("_template", "table");
+  fd.append("_captcha", "false");
+  Object.keys(fields).forEach((key) => fd.append(key, fields[key] == null ? "" : String(fields[key])));
+  if (file) {
+    if (file.size > 5000000) throw new Error("Logo is too large. Use a file under 5 MB.");
+    fd.append("logo", file, file.name);
   }
-  statusEl.textContent = "Sent. We emailed orders@3dbrewtap.com and will follow up.";
+  const res = await fetch("https://formsubmit.co/ajax/orders@3dbrewtap.com", {
+    method: "POST",
+    headers: { Accept: "application/json" },
+    body: fd
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok || data.success === "false" || data.success === false) {
+    throw new Error(data.message || "Could not send the request.");
+  }
+  statusEl.textContent = "Sent to orders@3dbrewtap.com. Check that inbox — the first submit may need a confirmation click.";
 };
 
 document.getElementById("shapeChips").addEventListener("click", (e) => {
@@ -118,7 +112,6 @@ document.getElementById("quoteForm").addEventListener("submit", async (e) => {
     return;
   }
   try {
-    const fileBits = await fileToPayload(document.getElementById("logoFile").files[0]);
     await postQuote({
       source: "Build your custom tap",
       name,
@@ -127,9 +120,8 @@ document.getElementById("quoteForm").addEventListener("submit", async (e) => {
       notes: document.getElementById("notes").value.trim(),
       shape: document.querySelector("#shapeChips .chip.on")?.dataset.shape || "",
       qty: document.getElementById("qty").value,
-      tapText: document.getElementById("tapText").value.trim(),
-      ...fileBits
-    }, status);
+      tapText: document.getElementById("tapText").value.trim()
+    }, document.getElementById("logoFile").files[0], status);
   } catch (err) {
     status.textContent = err.message;
   }
@@ -139,15 +131,13 @@ document.getElementById("logoForm").addEventListener("submit", async (e) => {
   e.preventDefault();
   const statusEl = document.getElementById("logoStatus");
   try {
-    const fileBits = await fileToPayload(document.getElementById("logoUpload").files[0]);
     await postQuote({
       source: "Just send a logo",
       name: document.getElementById("logoName").value.trim(),
       email: document.getElementById("logoEmail").value.trim(),
       phone: document.getElementById("logoPhone").value.trim(),
-      notes: document.getElementById("logoNotes").value.trim(),
-      ...fileBits
-    }, statusEl);
+      notes: document.getElementById("logoNotes").value.trim()
+    }, document.getElementById("logoUpload").files[0], statusEl);
     e.target.reset();
   } catch (err) {
     statusEl.textContent = err.message;
