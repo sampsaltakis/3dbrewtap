@@ -74,22 +74,34 @@ h1 em { font-style: normal; color: var(--orange); }
 .lightbox {
   position: fixed; inset: 0; z-index: 80;
   background: rgba(8,8,8,.92);
-  display: none; place-items: center;
-  padding: 56px 24px 40px;
+  display: none;
 }
-.lightbox.open { display: grid; }
+.lightbox.open { display: block; }
 .lightbox img {
-  max-width: min(96vw, 1400px); max-height: 82vh;
+  position: absolute; top: 46%; left: 50%;
+  transform: translate(-50%, -50%);
+  max-width: min(82vw, 1280px); max-height: 76vh;
   width: auto; height: auto; object-fit: contain;
   border-radius: 8px;
 }
-.lightbox p { color: #fff; margin-top: 14px; font-weight: 600; text-align: center; }
-.lightbox-close {
-  position: absolute; top: 16px; right: 18px;
-  width: 44px; height: 44px; border: 0; border-radius: 999px;
-  background: #fff; color: #111; font-size: 28px; line-height: 1;
-  cursor: pointer; font: inherit; font-weight: 700;
+.lightbox p {
+  position: absolute; left: 16px; right: 16px; bottom: 18px;
+  color: #fff; font-weight: 600; text-align: center;
 }
+.lightbox-close,
+.lightbox-nav {
+  position: absolute; border: 0; border-radius: 999px;
+  background: #fff; color: #111; cursor: pointer; font: inherit; font-weight: 700;
+}
+.lightbox-close {
+  top: 16px; right: 18px; width: 44px; height: 44px; font-size: 28px; line-height: 1;
+}
+.lightbox-nav {
+  top: 50%; transform: translateY(-50%);
+  width: 48px; height: 48px; font-size: 34px; line-height: 1;
+}
+.lightbox-prev { left: 16px; }
+.lightbox-next { right: 16px; }
 @keyframes alive {
   from { transform: scale(1.03) translate3d(0,0,0); }
   to { transform: scale(1.1) translate3d(0,-8px,0); }
@@ -138,6 +150,7 @@ footer { padding: 28px 7% 40px; display: flex; justify-content: space-between; c
   .hero-shot img { height: min(70vh, 620px); }
   .hero-copy { left: 18px; right: 18px; bottom: 18px; max-width: none; }
   h1 { font-size: clamp(28px, 8vw, 40px); }
+  .lightbox-nav { width: 40px; height: 40px; font-size: 28px; }
 }
 @media (prefers-reduced-motion: reduce) {
   .shot img { animation: none; }
