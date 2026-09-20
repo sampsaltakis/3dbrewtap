@@ -21,17 +21,41 @@ const markSwatch = (root, btn) => {
   btn.classList.add("on");
 };
 
+const fileToDataUrl = (file) => new Promise((resolve, reject) => {
+  const reader = new FileReader();
+  reader.onerror = () => reject(new Error("Could not read the file."));
+  reader.onload = () => resolve(String(reader.result || ""));
+  reader.readAsDataURL(file);
+});
+
+const saveToDropbox = async (file, name) => {
+  if (!file) return "";
+  const fileData = await fileToDataUrl(file);
+  const res = await fetch("/api/dropbox", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ name, fileName: file.name, fileData })
+  });
+  const raw = await res.text();
+  let data = {};
+  try { data = JSON.parse(raw); } catch (e) { data = {}; }
+  if (!res.ok) throw new Error(data.error || "Could not save the logo to Dropbox.");
+  return data.path || "";
+};
+
 const postQuote = async (fields, file, statusEl) => {
   statusEl.textContent = "Sending…";
+  if (file && file.size > 5000000) throw new Error("Logo is too large. Use a file under 5 MB.");
+  if (file) {
+    statusEl.textContent = "Saving logo to Dropbox…";
+    fields.dropboxPath = await saveToDropbox(file, fields.name);
+  }
   const fd = new FormData();
   fd.append("_subject", "New tap request from " + fields.name);
   fd.append("_template", "table");
   fd.append("_captcha", "false");
   Object.keys(fields).forEach((key) => fd.append(key, fields[key] == null ? "" : String(fields[key])));
-  if (file) {
-    if (file.size > 5000000) throw new Error("Logo is too large. Use a file under 5 MB.");
-    fd.append("logo", file, file.name);
-  }
+  if (file) fd.append("logoFileName", file.name);
   const res = await fetch("https://formsubmit.co/ajax/orders@3dbrewtap.com", {
     method: "POST",
     headers: { Accept: "application/json" },
@@ -41,7 +65,9 @@ const postQuote = async (fields, file, statusEl) => {
   if (!res.ok || data.success === "false" || data.success === false) {
     throw new Error(data.message || "Could not send the request.");
   }
-  statusEl.textContent = "Sent to orders@3dbrewtap.com.";
+  statusEl.textContent = fields.dropboxPath
+    ? "Sent to orders@3dbrewtap.com. Logo saved in Dropbox."
+    : "Sent to orders@3dbrewtap.com.";
 };
 
 document.getElementById("shapeChips").addEventListener("click", (e) => {
