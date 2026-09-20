@@ -2,7 +2,8 @@
   "functions": {
     "api/quote.js": {
       "memory": 1024,
-      "maxDuration": 15
+      "maxDuration": 15,
+      "excludeFiles": "{3dbrewtap.zip,images/**,*.html,*.css}"
     }
   }
 }
