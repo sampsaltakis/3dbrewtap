@@ -18,9 +18,9 @@
     </a>
     <nav>
       <a href="#build">Build</a>
+      <a href="#send-logo">Send a logo</a>
       <a href="#work">Work</a>
       <a href="#how">How it works</a>
-      <a href="#shapes">Shapes</a>
     </nav>
     <a class="btn" href="#build">Build your tap</a>
   </header>
@@ -34,7 +34,7 @@
           <p class="lead">Standard, modern, and one-off shapes. Upload a logo, place it on the handle, and send it for a quote. Printed for bars, breweries, and home kegerators.</p>
           <div class="hero-actions">
             <a class="btn" href="#build">Start building</a>
-            <a class="btn ghost" href="#work">See them on tap</a>
+            <a class="btn ghost" href="#send-logo">Just send a logo</a>
           </div>
         </div>
       </figure>
@@ -99,8 +99,31 @@
         <article><span>01</span><h3>Pick a shape</h3><p>Classic lever, modern slab, wide face, or a sculpted one-off.</p></article>
         <article><span>02</span><h3>Drop in artwork</h3><p>Upload a logo or type a name. Resize, rotate, and slide it into place.</p></article>
         <article><span>03</span><h3>Get a quote</h3><p>We check printability, colors, and quantity, then send pricing.</p></article>
-        <article><span>Or</span><h3>Just send a logo</h3><p>Don’t want to build it yourself? Upload a logo or image and our designers will come up with the handle for you.</p></article>
+        <article>
+          <span>Or</span>
+          <h3>Just send a logo</h3>
+          <p>Don’t want to build it yourself? Upload a logo or image and our designers will come up with the handle for you.</p>
+          <p><a class="btn" href="#send-logo" style="margin-top:12px">Send a logo</a></p>
+        </article>
       </div>
+    </section>
+    <section class="builder" id="send-logo">
+      <h2>Just send a logo</h2>
+      <p class="sub">Name, email, phone, and a logo. We design the handle and email you back.</p>
+      <form class="panel logo-form" id="logoForm">
+        <label for="logoName">Name</label>
+        <input id="logoName" name="name" type="text" required placeholder="Your name" />
+        <label for="logoEmail">Email</label>
+        <input id="logoEmail" name="email" type="email" required placeholder="you@brewery.com" />
+        <label for="logoPhone">Phone</label>
+        <input id="logoPhone" name="phone" type="tel" required placeholder="(555) 555-5555" />
+        <label for="logoUpload">Logo or image</label>
+        <input id="logoUpload" name="logo" type="file" accept="image/*" required />
+        <label for="logoNotes">Notes</label>
+        <textarea id="logoNotes" name="notes" rows="3" placeholder="Beer name, colors, quantity…"></textarea>
+        <button class="btn submit" type="submit">Send to our designers</button>
+        <p class="status" id="logoStatus"></p>
+      </form>
     </section>
     <section class="shapes-sec" id="shapes">
       <h2>Handle styles</h2>
@@ -171,8 +194,12 @@
           <input id="pos" type="range" min="16" max="170" value="70" />
           <label for="qty">Quantity</label>
           <input id="qty" type="number" min="1" value="1" />
+          <label for="custName">Name</label>
+          <input id="custName" type="text" required placeholder="Your name" />
           <label for="email">Email</label>
           <input id="email" type="email" required placeholder="you@brewery.com" />
+          <label for="phone">Phone</label>
+          <input id="phone" type="tel" required placeholder="(555) 555-5555" />
           <label for="notes">Notes</label>
           <textarea id="notes" rows="3" placeholder="Colors, deadline, mounting style…"></textarea>
           <button class="btn submit" type="submit">Submit for quote</button>
