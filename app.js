@@ -54,6 +54,25 @@ document.getElementById("quoteForm").addEventListener("submit", (e) => {
 const lightbox = document.getElementById("lightbox");
 const lightboxImg = document.getElementById("lightboxImg");
 const lightboxCap = document.getElementById("lightboxCap");
+const galleryImgs = [...document.querySelectorAll(".gallery .shot img")];
+let current = 0;
+
+const showAt = (i) => {
+  current = (i + galleryImgs.length) % galleryImgs.length;
+  const img = galleryImgs[current];
+  const cap = img.closest(".shot").querySelector("figcaption");
+  lightboxImg.src = img.currentSrc || img.src;
+  lightboxImg.alt = img.alt || "";
+  lightboxCap.textContent = cap ? cap.textContent : "";
+};
+
+const openLightbox = (i) => {
+  showAt(i);
+  lightbox.classList.add("open");
+  lightbox.setAttribute("aria-hidden", "false");
+  document.body.style.overflow = "hidden";
+};
+
 const closeLightbox = () => {
   lightbox.classList.remove("open");
   lightbox.setAttribute("aria-hidden", "true");
@@ -63,18 +82,24 @@ const closeLightbox = () => {
 document.querySelector(".gallery").addEventListener("click", (e) => {
   const img = e.target.closest(".shot img");
   if (!img) return;
-  const cap = img.closest(".shot").querySelector("figcaption");
-  lightboxImg.src = img.currentSrc || img.src;
-  lightboxImg.alt = img.alt || "";
-  lightboxCap.textContent = cap ? cap.textContent : "";
-  lightbox.classList.add("open");
-  lightbox.setAttribute("aria-hidden", "false");
-  document.body.style.overflow = "hidden";
+  openLightbox(galleryImgs.indexOf(img));
 });
 
 lightbox.addEventListener("click", (e) => {
+  if (e.target.closest(".lightbox-prev")) {
+    showAt(current - 1);
+    return;
+  }
+  if (e.target.closest(".lightbox-next")) {
+    showAt(current + 1);
+    return;
+  }
   if (e.target === lightbox || e.target.closest(".lightbox-close")) closeLightbox();
 });
+
 document.addEventListener("keydown", (e) => {
-  if (e.key === "Escape" && lightbox.classList.contains("open")) closeLightbox();
+  if (!lightbox.classList.contains("open")) return;
+  if (e.key === "Escape") closeLightbox();
+  if (e.key === "ArrowLeft") showAt(current - 1);
+  if (e.key === "ArrowRight") showAt(current + 1);
 });
