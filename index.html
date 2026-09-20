@@ -114,8 +114,17 @@
     </section>
     <section class="builder" id="build">
       <h2>Build your custom tap</h2>
-      <p class="sub">This preview is for layout. Final prints are reviewed before we quote.</p>
+      <p class="sub">Live preview of shape, color, text, and logo. Final prints are reviewed before we quote.</p>
       <div class="builder-grid">
+        <div class="preview-wrap">
+          <div class="preview" id="preview">
+            <div class="preview-handle classic" id="handle">
+              <div class="print-zone" id="printZone"></div>
+              <div class="art" id="art">LOGO</div>
+            </div>
+          </div>
+          <p class="hint">This is a layout preview, not a 3D render. Upload a logo or type a name.</p>
+        </div>
         <form class="panel" id="quoteForm">
           <label>Handle shape</label>
           <div class="chips" id="shapeChips">
@@ -124,6 +133,24 @@
             <button type="button" class="chip" data-shape="wide">Wide</button>
             <button type="button" class="chip" data-shape="sculpt">Sculpt</button>
           </div>
+          <label>Body color</label>
+          <div class="swatches" id="bodyColors">
+            <button type="button" class="swatch on" data-color="#2C2C2C" style="background:#2C2C2C" aria-label="Charcoal"></button>
+            <button type="button" class="swatch" data-color="#1A2744" style="background:#1A2744" aria-label="Navy"></button>
+            <button type="button" class="swatch" data-color="#6B1C28" style="background:#6B1C28" aria-label="Maroon"></button>
+            <button type="button" class="swatch" data-color="#2E7D4F" style="background:#2E7D4F" aria-label="Green"></button>
+            <button type="button" class="swatch" data-color="#FF5A1F" style="background:#FF5A1F" aria-label="Orange"></button>
+            <button type="button" class="swatch" data-color="#F4F1EC" style="background:#F4F1EC" aria-label="Cream"></button>
+            <button type="button" class="swatch" data-color="#FFFFFF" style="background:#FFFFFF" aria-label="White"></button>
+          </div>
+          <label>Letter / plate color</label>
+          <div class="swatches" id="artColors">
+            <button type="button" class="swatch on" data-color="#FFFFFF" data-ink="#111111" style="background:#FFFFFF" aria-label="White plate"></button>
+            <button type="button" class="swatch" data-color="#111111" data-ink="#FFFFFF" style="background:#111111" aria-label="Black plate"></button>
+            <button type="button" class="swatch" data-color="#C9A227" data-ink="#111111" style="background:#C9A227" aria-label="Gold plate"></button>
+            <button type="button" class="swatch" data-color="#FF5A1F" data-ink="#FFFFFF" style="background:#FF5A1F" aria-label="Orange plate"></button>
+          </div>
+          <label class="check-row"><input id="printArea" type="checkbox" /> Show print area</label>
           <label for="logoFile">Logo or image</label>
           <input id="logoFile" type="file" accept="image/*" />
           <label for="tapText">Text on handle</label>
@@ -151,14 +178,6 @@
           <button class="btn submit" type="submit">Submit for quote</button>
           <p class="status" id="status"></p>
         </form>
-        <div class="preview-wrap">
-          <div class="preview" id="preview">
-            <div class="preview-handle classic" id="handle">
-              <div class="art" id="art">LOGO</div>
-            </div>
-          </div>
-          <p class="hint">Drag the sliders. Upload replaces the placeholder.</p>
-        </div>
       </div>
     </section>
   </main>
