@@ -41,7 +41,7 @@ const postQuote = async (fields, file, statusEl) => {
   if (!res.ok || data.success === "false" || data.success === false) {
     throw new Error(data.message || "Could not send the request.");
   }
-  statusEl.textContent = "Sent to orders@3dbrewtap.com. Check that inbox — the first submit may need a confirmation click.";
+  statusEl.textContent = "Sent to orders@3dbrewtap.com.";
 };
 
 document.getElementById("shapeChips").addEventListener("click", (e) => {
