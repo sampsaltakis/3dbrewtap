@@ -23,6 +23,7 @@ const markSwatch = (root, btn) => {
 
 const fileToPayload = (file) => new Promise((resolve, reject) => {
   if (!file) return resolve({});
+  if (file.size > 2500000) return reject(new Error("Logo is too large. Use a file under 2.5 MB."));
   const reader = new FileReader();
   reader.onerror = () => reject(new Error("Could not read the file."));
   reader.onload = () => resolve({
@@ -40,8 +41,12 @@ const postQuote = async (payload, statusEl) => {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload)
   });
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(data.error || "Could not send the request.");
+  const raw = await res.text();
+  let data = {};
+  try { data = JSON.parse(raw); } catch (e) { data = {}; }
+  if (!res.ok) {
+    throw new Error(data.error || data.detail || ("Could not send the request (" + res.status + ")."));
+  }
   statusEl.textContent = "Sent. We emailed orders@3dbrewtap.com and will follow up.";
 };
 
