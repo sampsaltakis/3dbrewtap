@@ -1,3 +1,5 @@
+export const config = { runtime: "nodejs" };
+
 function escapeHtml(value) {
   return String(value)
     .replace(/&/g, "&")
@@ -79,22 +81,27 @@ async function sendQuote(body) {
   return { status: 200, json: { ok: true } };
 }
 
-module.exports = async function handler(req, res) {
+export async function POST(request) {
   try {
-    res.setHeader("Access-Control-Allow-Origin", "*");
-    res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
-    res.setHeader("Access-Control-Allow-Headers", "Content-Type");
-    if (req.method === "OPTIONS") return res.status(204).end();
-    if (req.method !== "POST") return res.status(405).json({ error: "POST only" });
-
-    let body = req.body;
-    if (!body || typeof body === "string") {
-      try { body = JSON.parse(body || "{}"); } catch (e) { body = {}; }
-    }
-
-    const result = await sendQuote(body);
-    return res.status(result.status).json(result.json);
+    const body = await request.json();
+    const result = await sendQuote(body || {});
+    return Response.json(result.json, { status: result.status });
   } catch (err) {
-    return res.status(500).json({ error: err && err.message ? err.message : "Server error" });
+    return Response.json({ error: err && err.message ? err.message : "Server error" }, { status: 500 });
   }
-};
+}
+
+export function GET() {
+  return Response.json({ error: "POST only" }, { status: 405 });
+}
+
+export function OPTIONS() {
+  return new Response(null, {
+    status: 204,
+    headers: {
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "POST, OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type"
+    }
+  });
+}
