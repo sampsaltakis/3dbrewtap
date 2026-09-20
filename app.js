@@ -21,10 +21,34 @@ const markSwatch = (root, btn) => {
   btn.classList.add("on");
 };
 
+const fileToPayload = (file) => new Promise((resolve, reject) => {
+  if (!file) return resolve({});
+  const reader = new FileReader();
+  reader.onerror = () => reject(new Error("Could not read the file."));
+  reader.onload = () => resolve({
+    fileName: file.name,
+    fileType: file.type,
+    fileData: String(reader.result || "")
+  });
+  reader.readAsDataURL(file);
+});
+
+const postQuote = async (payload, statusEl) => {
+  statusEl.textContent = "Sending…";
+  const res = await fetch("/api/quote", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload)
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || "Could not send the request.");
+  statusEl.textContent = "Sent. We emailed orders@3dbrewtap.com and will follow up.";
+};
+
 document.getElementById("shapeChips").addEventListener("click", (e) => {
   const btn = e.target.closest(".chip");
   if (!btn) return;
-  document.querySelectorAll(".chip").forEach((c) => c.classList.remove("on"));
+  document.querySelectorAll("#shapeChips .chip").forEach((c) => c.classList.remove("on"));
   btn.classList.add("on");
   handle.className = "preview-handle " + btn.dataset.shape;
 });
@@ -79,14 +103,50 @@ bind("pos", (e) => {
   document.getElementById("posVal").textContent = e.target.value;
 });
 
-document.getElementById("quoteForm").addEventListener("submit", (e) => {
+document.getElementById("quoteForm").addEventListener("submit", async (e) => {
   e.preventDefault();
+  const name = document.getElementById("custName").value.trim();
   const email = document.getElementById("email").value.trim();
-  if (!email) {
-    status.textContent = "Add an email so the quote can be sent.";
+  const phone = document.getElementById("phone").value.trim();
+  if (!name || !email || !phone) {
+    status.textContent = "Name, email, and phone are required.";
     return;
   }
-  status.textContent = "Quote request captured. Next we connect this form to your email or shop backend.";
+  try {
+    const fileBits = await fileToPayload(document.getElementById("logoFile").files[0]);
+    await postQuote({
+      source: "Build your custom tap",
+      name,
+      email,
+      phone,
+      notes: document.getElementById("notes").value.trim(),
+      shape: document.querySelector("#shapeChips .chip.on")?.dataset.shape || "",
+      qty: document.getElementById("qty").value,
+      tapText: document.getElementById("tapText").value.trim(),
+      ...fileBits
+    }, status);
+  } catch (err) {
+    status.textContent = err.message;
+  }
+});
+
+document.getElementById("logoForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const statusEl = document.getElementById("logoStatus");
+  try {
+    const fileBits = await fileToPayload(document.getElementById("logoUpload").files[0]);
+    await postQuote({
+      source: "Just send a logo",
+      name: document.getElementById("logoName").value.trim(),
+      email: document.getElementById("logoEmail").value.trim(),
+      phone: document.getElementById("logoPhone").value.trim(),
+      notes: document.getElementById("logoNotes").value.trim(),
+      ...fileBits
+    }, statusEl);
+    e.target.reset();
+  } catch (err) {
+    statusEl.textContent = err.message;
+  }
 });
 
 const lightbox = document.getElementById("lightbox");
