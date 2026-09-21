@@ -14,7 +14,31 @@ const handle = document.getElementById("handle");
 const art = document.getElementById("art");
 const status = document.getElementById("status");
 const printZone = document.getElementById("printZone");
+const preview = document.getElementById("preview");
+const tapModel = document.getElementById("tapModel");
 let uploaded = false;
+let bodyColor = "#2C2C2C";
+
+const hexToRgb = (hex) => {
+  const n = String(hex || "#2C2C2C").replace("#", "");
+  return [
+    parseInt(n.slice(0, 2), 16) / 255,
+    parseInt(n.slice(2, 4), 16) / 255,
+    parseInt(n.slice(4, 6), 16) / 255
+  ];
+};
+
+const tintModel = (hex) => {
+  bodyColor = hex;
+  const model = tapModel && tapModel.model;
+  if (!model || !model.materials) return;
+  const rgb = hexToRgb(hex);
+  model.materials.forEach((mat) => {
+    try { mat.pbrMetallicRoughness.setBaseColorFactor([rgb[0], rgb[1], rgb[2], 1]); } catch (e) {}
+  });
+};
+
+if (tapModel) tapModel.addEventListener("load", () => tintModel(bodyColor));
 
 const markSwatch = (root, btn) => {
   root.querySelectorAll(".swatch").forEach((s) => s.classList.remove("on"));
@@ -75,7 +99,10 @@ document.getElementById("shapeChips").addEventListener("click", (e) => {
   if (!btn) return;
   document.querySelectorAll("#shapeChips .chip").forEach((c) => c.classList.remove("on"));
   btn.classList.add("on");
-  handle.className = "preview-handle " + btn.dataset.shape;
+  const modelSrc = btn.dataset.model;
+  if (preview) preview.classList.toggle("is-3d", Boolean(modelSrc));
+  if (modelSrc && tapModel && tapModel.getAttribute("src") !== modelSrc) tapModel.src = modelSrc;
+  handle.className = "preview-handle " + (btn.dataset.shape === "narrow" ? "modern" : btn.dataset.shape);
 });
 
 document.getElementById("bodyColors").addEventListener("click", (e) => {
@@ -83,6 +110,7 @@ document.getElementById("bodyColors").addEventListener("click", (e) => {
   if (!btn) return;
   markSwatch(e.currentTarget, btn);
   handle.style.background = btn.dataset.color;
+  tintModel(btn.dataset.color);
 });
 
 document.getElementById("artColors").addEventListener("click", (e) => {
