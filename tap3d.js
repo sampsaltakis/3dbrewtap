@@ -1,8 +1,8 @@
-import * as THREE from "https://unpkg.com/three@0.170.0/build/three.module.js";
-import { GLTFLoader } from "https://unpkg.com/three@0.170.0/examples/jsm/loaders/GLTFLoader.js";
-import { OrbitControls } from "https://unpkg.com/three@0.170.0/examples/jsm/controls/OrbitControls.js";
-import { FontLoader } from "https://unpkg.com/three@0.170.0/examples/jsm/loaders/FontLoader.js";
-import { TextGeometry } from "https://unpkg.com/three@0.170.0/examples/jsm/geometries/TextGeometry.js";
+import * as THREE from "three";
+import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+import { FontLoader } from "three/addons/loaders/FontLoader.js";
+import { TextGeometry } from "three/addons/geometries/TextGeometry.js";
 
 const FONT_URLS = {
   bold: "https://unpkg.com/three@0.170.0/examples/fonts/helvetiker_bold.typeface.json",
@@ -40,10 +40,10 @@ const state = {
 
 const canvas = document.getElementById("tapCanvas");
 if (!canvas) {
-  window.tapPreview = { setColor() {}, setText() {}, setFont() {}, setRaise() {}, setSize() {}, setDirection() {}, setStyle() {} };
+  window.tapPreview = { setColor() {}, setText() {}, setFont() {}, setRaise() {}, setSize() {}, setDirection() {}, setStyle() {}, setLetterColor() {} };
 } else {
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false });
-  renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
   renderer.setClearColor(0x171717, 1);
   renderer.outputColorSpace = THREE.SRGBColorSpace;
 
@@ -54,11 +54,11 @@ if (!canvas) {
   controls.target.set(-18, 125, 0);
   camera.position.set(220, 140, 280);
 
-  scene.add(new THREE.AmbientLight(0xffffff, 0.7));
+  scene.add(new THREE.AmbientLight(0xffffff, 0.75));
   const key = new THREE.DirectionalLight(0xffffff, 1.15);
   key.position.set(160, 220, 180);
   scene.add(key);
-  const fill = new THREE.DirectionalLight(0xffd7c2, 0.35);
+  const fill = new THREE.DirectionalLight(0xffd7c2, 0.4);
   fill.position.set(-120, 40, -80);
   scene.add(fill);
 
@@ -70,10 +70,11 @@ if (!canvas) {
   let bodyMats = [];
 
   const resize = () => {
-    const w = canvas.clientWidth || canvas.parentElement.clientWidth;
-    const h = canvas.clientHeight || canvas.parentElement.clientHeight;
+    const parent = canvas.parentElement;
+    const w = Math.max(parent ? parent.clientWidth : canvas.clientWidth, 1);
+    const h = Math.max(parent ? parent.clientHeight : canvas.clientHeight, 1);
     renderer.setSize(w, h, false);
-    camera.aspect = w / Math.max(h, 1);
+    camera.aspect = w / h;
     camera.updateProjectionMatrix();
   };
   resize();
@@ -100,6 +101,7 @@ if (!canvas) {
     });
     root.add(model);
     state.ready = true;
+    resize();
     rebuildLetters();
   });
 
@@ -111,9 +113,9 @@ if (!canvas) {
       if (child.geometry) child.geometry.dispose();
       if (child.material) child.material.dispose();
     }
-    if (state.style === "none" || !state.text) return;
+    if (state.style !== "raised" || !state.text) return;
     const font = await loadFont(fontKeyFor(state.fontName));
-    const chars = [...state.text.toUpperCase()].filter((ch) => ch !== "");
+    const chars = [...state.text.toUpperCase()];
     const letterH = 8 + state.size * 0.45;
     const depth = Math.max(0.8, state.raise);
     const pitch = letterH * 0.92;
