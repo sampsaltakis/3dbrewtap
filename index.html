@@ -10,7 +10,6 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Anton&family=Archivo+Black&family=Bungee&family=Fredoka:wght@600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="styles.css" />
-  <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/4.0.0/model-viewer.min.js"></script>
 </head>
 <body>
   <header class="nav">
@@ -138,28 +137,16 @@
     </section>
     <section class="builder" id="build">
       <h2>Build your custom tap</h2>
-      <p class="sub">Spin the Narrow handle, stack raised letters like Fat Punch, or skip letters and use a top ornament.</p>
+      <p class="sub">Letters sit on the handle. Rotate the tap to see how far they stand off.</p>
       <div class="builder-grid">
         <div class="preview-wrap">
           <div class="preview is-3d" id="preview">
-            <model-viewer
-              id="tapModel"
-              src="models/Tap-Narrow.glb"
-              alt="Narrow tap handle"
-              camera-controls
-              touch-action="pan-y"
-              shadow-intensity="0.8"
-              exposure="1.05"
-              camera-orbit="25deg 72deg 1.35m"
-              min-camera-orbit="auto 55deg auto"
-              max-camera-orbit="auto 95deg auto"
-              interaction-prompt="none"
-            ></model-viewer>
+            <canvas id="tapCanvas"></canvas>
             <div class="preview-handle classic" id="handle"></div>
             <div class="print-zone" id="printZone"></div>
-            <div class="art raised" id="art"></div>
+            <div class="art none" id="art"></div>
           </div>
-          <p class="hint">Pick a typeface and how far the letters stand off the handle. That raise is what we print.</p>
+          <p class="hint">Drag to spin the handle. Raised letters are part of the 3D model, so their thickness turns with the tap.</p>
         </div>
         <form class="panel" id="quoteForm">
           <label>Handle shape</label>
@@ -186,6 +173,11 @@
             <button type="button" class="chip on" data-style="raised">Raised letters</button>
             <button type="button" class="chip" data-style="plate">Plate</button>
             <button type="button" class="chip" data-style="ornament">Top ornament</button>
+          </div>
+          <label>Read direction</label>
+          <div class="chips" id="letterDir">
+            <button type="button" class="chip on" data-dir="down">Top to bottom</button>
+            <button type="button" class="chip" data-dir="up">Bottom to top</button>
           </div>
           <label>Letter / ornament color</label>
           <div class="swatches" id="artColors">
@@ -248,6 +240,7 @@
     </div>
     <p>© 2026 3DBrewTap</p>
   </footer>
+  <script type="module" src="tap3d.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
