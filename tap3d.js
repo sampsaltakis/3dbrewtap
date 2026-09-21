@@ -1,29 +1,45 @@
 import * as THREE from "three";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
-import { FontLoader } from "three/addons/loaders/FontLoader.js";
-import { TextGeometry } from "three/addons/geometries/TextGeometry.js";
+import opentype from "https://cdn.jsdelivr.net/npm/opentype.js@1.3.4/+esm";
 
-const FONT_URLS = {
-  bold: "https://unpkg.com/three@0.170.0/examples/fonts/helvetiker_bold.typeface.json",
-  regular: "https://unpkg.com/three@0.170.0/examples/fonts/helvetiker_regular.typeface.json",
-  serif: "https://unpkg.com/three@0.170.0/examples/fonts/gentilis_regular.typeface.json"
+const FONT_FILES = {
+  anton: "https://cdn.jsdelivr.net/fontsource/fonts/anton@5.2.5/latin-400-normal.ttf",
+  bungee: "https://cdn.jsdelivr.net/fontsource/fonts/bungee@5.2.5/latin-400-normal.ttf",
+  "archivo-black": "https://cdn.jsdelivr.net/fontsource/fonts/archivo-black@5.2.5/latin-400-normal.ttf",
+  fredoka: "https://cdn.jsdelivr.net/fontsource/fonts/fredoka@5.2.5/latin-700-normal.ttf",
+  outfit: "https://cdn.jsdelivr.net/fontsource/fonts/outfit@5.2.5/latin-800-normal.ttf"
 };
 
 const fontCache = {};
-const loadFont = (key) => {
-  if (fontCache[key]) return fontCache[key];
-  fontCache[key] = new Promise((resolve, reject) => {
-    new FontLoader().load(FONT_URLS[key], resolve, undefined, reject);
-  });
-  return fontCache[key];
+const loadFontFile = async (key) => {
+  const url = FONT_FILES[key] || FONT_FILES.anton;
+  if (!fontCache[url]) {
+    fontCache[url] = fetch(url).then((r) => r.arrayBuffer()).then((buf) => opentype.parse(buf));
+  }
+  return fontCache[url];
 };
 
 const fontKeyFor = (name) => {
-  const n = String(name || "").toLowerCase();
-  if (n.includes("georgia")) return "serif";
-  if (n.includes("outfit") || n.includes("fredoka")) return "regular";
-  return "bold";
+  const n = String(name || "anton").toLowerCase();
+  if (n.includes("bungee")) return "bungee";
+  if (n.includes("archivo")) return "archivo-black";
+  if (n.includes("fredoka")) return "fredoka";
+  if (n.includes("outfit")) return "outfit";
+  return "anton";
+};
+
+const shapesFromFont = (font, text, size) => {
+  const path = font.getPath(text, 0, 0, size);
+  const shapePath = new THREE.ShapePath();
+  path.commands.forEach((cmd) => {
+    if (cmd.type === "M") shapePath.moveTo(cmd.x, -cmd.y);
+    else if (cmd.type === "L") shapePath.lineTo(cmd.x, -cmd.y);
+    else if (cmd.type === "C") shapePath.bezierCurveTo(cmd.x1, -cmd.y1, cmd.x2, -cmd.y2, cmd.x, -cmd.y);
+    else if (cmd.type === "Q") shapePath.quadraticCurveTo(cmd.x1, -cmd.y1, cmd.x, -cmd.y);
+    else if (cmd.type === "Z") shapePath.currentPath.closePath();
+  });
+  return shapePath.toShapes(true);
 };
 
 const state = {
@@ -34,7 +50,7 @@ const state = {
   size: 34,
   raise: 2,
   direction: "down",
-  fontName: "Anton, sans-serif",
+  fontName: "anton",
   ready: false
 };
 
@@ -66,7 +82,6 @@ if (!canvas) {
   scene.add(root);
   const letters = new THREE.Group();
   root.add(letters);
-
   let bodyMats = [];
 
   const resize = () => {
@@ -88,8 +103,7 @@ if (!canvas) {
   tick();
 
   new GLTFLoader().load("models/Tap-Narrow.glb", (gltf) => {
-    const model = gltf.scene;
-    model.traverse((obj) => {
+    gltf.scene.traverse((obj) => {
       if (obj.isMesh) {
         obj.material = new THREE.MeshStandardMaterial({
           color: new THREE.Color(state.body),
@@ -99,13 +113,11 @@ if (!canvas) {
         bodyMats.push(obj.material);
       }
     });
-    root.add(model);
+    root.add(gltf.scene);
     state.ready = true;
     resize();
     rebuildLetters();
   });
-
-  const hexColor = (hex) => new THREE.Color(hex || "#F4EFE4");
 
   async function rebuildLetters() {
     while (letters.children.length) {
@@ -114,14 +126,13 @@ if (!canvas) {
       if (child.material) child.material.dispose();
     }
     if (state.style !== "raised" || !state.text) return;
-    const font = await loadFont(fontKeyFor(state.fontName));
+    const font = await loadFontFile(fontKeyFor(state.fontName));
     const depth = Math.max(0.8, state.raise);
     const letterH = Math.min(32, 10 + state.size * 0.4);
-    const geo = new TextGeometry(state.text.toUpperCase(), {
-      font,
-      size: letterH,
+    const shapes = shapesFromFont(font, state.text.toUpperCase(), letterH);
+    if (!shapes.length) return;
+    const geo = new THREE.ExtrudeGeometry(shapes, {
       depth,
-      curveSegments: 5,
       bevelEnabled: true,
       bevelThickness: Math.min(0.4, depth * 0.14),
       bevelSize: Math.min(0.35, letterH * 0.04),
@@ -129,11 +140,12 @@ if (!canvas) {
     });
     geo.computeBoundingBox();
     geo.center();
-    const len = geo.boundingBox.max.x - geo.boundingBox.min.x;
+    const box = geo.boundingBox;
+    const len = box.max.x - box.min.x;
     const fit = Math.min(1, 226 / Math.max(len, 1));
     geo.scale(fit, fit, 1);
     const mesh = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({
-      color: hexColor(state.color),
+      color: new THREE.Color(state.color),
       roughness: 0.38,
       metalness: 0.02
     }));
@@ -149,37 +161,13 @@ if (!canvas) {
   }
 
   window.tapPreview = {
-    setColor(hex) {
-      state.body = hex;
-      bodyMats.forEach((m) => m.color.set(hex));
-    },
-    setText(text) {
-      state.text = text || "";
-      rebuildLetters();
-    },
-    setFont(name) {
-      state.fontName = name;
-      rebuildLetters();
-    },
-    setRaise(mm) {
-      state.raise = Number(mm) || 2;
-      rebuildLetters();
-    },
-    setSize(n) {
-      state.size = Number(n) || 34;
-      rebuildLetters();
-    },
-    setDirection(dir) {
-      state.direction = dir === "up" ? "up" : "down";
-      rebuildLetters();
-    },
-    setStyle(style) {
-      state.style = style;
-      rebuildLetters();
-    },
-    setLetterColor(hex) {
-      state.color = hex;
-      rebuildLetters();
-    }
+    setColor(hex) { state.body = hex; bodyMats.forEach((m) => m.color.set(hex)); },
+    setText(text) { state.text = text || ""; rebuildLetters(); },
+    setFont(name) { state.fontName = name; rebuildLetters(); },
+    setRaise(mm) { state.raise = Number(mm) || 2; rebuildLetters(); },
+    setSize(n) { state.size = Number(n) || 34; rebuildLetters(); },
+    setDirection(dir) { state.direction = dir === "up" ? "up" : "down"; rebuildLetters(); },
+    setStyle(style) { state.style = style || "raised"; rebuildLetters(); },
+    setLetterColor(hex) { state.color = hex; rebuildLetters(); }
   };
 }
