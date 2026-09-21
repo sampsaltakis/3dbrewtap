@@ -4,11 +4,11 @@ import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import opentype from "https://cdn.jsdelivr.net/npm/opentype.js@1.3.4/+esm";
 
 const FONT_FILES = {
-  anton: "https://cdn.jsdelivr.net/fontsource/fonts/anton@5.2.5/latin-400-normal.ttf",
-  bungee: "https://cdn.jsdelivr.net/fontsource/fonts/bungee@5.2.5/latin-400-normal.ttf",
-  "archivo-black": "https://cdn.jsdelivr.net/fontsource/fonts/archivo-black@5.2.5/latin-400-normal.ttf",
-  fredoka: "https://cdn.jsdelivr.net/fontsource/fonts/fredoka@5.2.5/latin-700-normal.ttf",
-  outfit: "https://cdn.jsdelivr.net/fontsource/fonts/outfit@5.2.5/latin-800-normal.ttf"
+  anton: "https://cdn.jsdelivr.net/fontsource/fonts/anton@latest/latin-400-normal.ttf",
+  bungee: "https://cdn.jsdelivr.net/fontsource/fonts/bungee@latest/latin-400-normal.ttf",
+  "archivo-black": "https://cdn.jsdelivr.net/fontsource/fonts/archivo-black@latest/latin-400-normal.ttf",
+  fredoka: "https://cdn.jsdelivr.net/fontsource/fonts/fredoka@latest/latin-700-normal.ttf",
+  outfit: "https://cdn.jsdelivr.net/fontsource/fonts/outfit@latest/latin-800-normal.ttf"
 };
 
 const fontCache = {};
@@ -29,15 +29,16 @@ const fontKeyFor = (name) => {
   return "anton";
 };
 
-const shapesFromFont = (font, text, size) => {
-  const path = font.getPath(text, 0, 0, size);
+const pathToShapes = (otPath) => {
   const shapePath = new THREE.ShapePath();
-  path.commands.forEach((cmd) => {
+  otPath.commands.forEach((cmd) => {
     if (cmd.type === "M") shapePath.moveTo(cmd.x, -cmd.y);
     else if (cmd.type === "L") shapePath.lineTo(cmd.x, -cmd.y);
     else if (cmd.type === "C") shapePath.bezierCurveTo(cmd.x1, -cmd.y1, cmd.x2, -cmd.y2, cmd.x, -cmd.y);
     else if (cmd.type === "Q") shapePath.quadraticCurveTo(cmd.x1, -cmd.y1, cmd.x, -cmd.y);
-    else if (cmd.type === "Z") shapePath.currentPath.closePath();
+    else if (cmd.type === "Z") {
+      if (shapePath.currentPath) shapePath.currentPath.closePath();
+    }
   });
   return shapePath.toShapes(true);
 };
@@ -68,15 +69,15 @@ if (!canvas) {
   const controls = new OrbitControls(camera, canvas);
   controls.enableDamping = true;
   controls.target.set(-18, 125, 0);
-  camera.position.set(210, 125, 30);
+  camera.position.set(210, 125, 90);
 
-  scene.add(new THREE.AmbientLight(0xffffff, 0.75));
-  const key = new THREE.DirectionalLight(0xffffff, 1.15);
-  key.position.set(160, 220, 180);
+  scene.add(new THREE.AmbientLight(0xffffff, 0.85));
+  const key = new THREE.DirectionalLight(0xffffff, 1.2);
+  key.position.set(220, 180, 120);
   scene.add(key);
-  const fill = new THREE.DirectionalLight(0xffd7c2, 0.4);
-  fill.position.set(-120, 40, -80);
-  scene.add(fill);
+  const rim = new THREE.DirectionalLight(0xffffff, 0.55);
+  rim.position.set(-80, 80, -160);
+  scene.add(rim);
 
   const root = new THREE.Group();
   scene.add(root);
@@ -127,27 +128,35 @@ if (!canvas) {
     }
     if (state.style !== "raised" || !state.text) return;
     const font = await loadFontFile(fontKeyFor(state.fontName));
-    const depth = Math.max(0.8, state.raise);
+    const depth = Math.max(1.2, state.raise);
     const letterH = Math.min(32, 10 + state.size * 0.4);
-    const shapes = shapesFromFont(font, state.text.toUpperCase(), letterH);
+    const otPaths = font.getPaths(state.text.toUpperCase(), 0, 0, letterH);
+    const shapes = otPaths.flatMap(pathToShapes).filter(Boolean);
     if (!shapes.length) return;
     const geo = new THREE.ExtrudeGeometry(shapes, {
       depth,
+      steps: 1,
       bevelEnabled: true,
-      bevelThickness: Math.min(0.4, depth * 0.14),
-      bevelSize: Math.min(0.35, letterH * 0.04),
-      bevelSegments: 1
+      bevelThickness: Math.max(0.25, depth * 0.12),
+      bevelSize: Math.min(0.45, letterH * 0.05),
+      bevelSegments: 2,
+      curveSegments: 8
     });
+    geo.computeVertexNormals();
     geo.computeBoundingBox();
     geo.center();
     const box = geo.boundingBox;
     const len = box.max.x - box.min.x;
-    const fit = Math.min(1, 226 / Math.max(len, 1));
+    const tall = box.max.y - box.min.y;
+    const fitW = 226 / Math.max(len, 1);
+    const fitH = 34 / Math.max(tall, 1);
+    const fit = Math.min(1, fitW, fitH);
     geo.scale(fit, fit, 1);
     const mesh = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({
       color: new THREE.Color(state.color),
-      roughness: 0.38,
-      metalness: 0.02
+      roughness: 0.32,
+      metalness: 0.04,
+      side: THREE.DoubleSide
     }));
     const along = state.direction === "up" ? -1 : 1;
     const across = state.direction === "up" ? -1 : 1;
@@ -156,7 +165,7 @@ if (!canvas) {
       new THREE.Vector3(0, 0, across),
       new THREE.Vector3(1, 0, 0)
     ));
-    mesh.position.set(0.35 + depth / 2, 125, 0);
+    mesh.position.set(0.2 + depth / 2, 125, 0);
     letters.add(mesh);
   }
 
