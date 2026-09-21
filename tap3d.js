@@ -52,7 +52,7 @@ if (!canvas) {
   const controls = new OrbitControls(camera, canvas);
   controls.enableDamping = true;
   controls.target.set(-18, 125, 0);
-  camera.position.set(220, 140, 280);
+  camera.position.set(210, 125, 30);
 
   scene.add(new THREE.AmbientLight(0xffffff, 0.75));
   const key = new THREE.DirectionalLight(0xffffff, 1.15);
@@ -115,41 +115,37 @@ if (!canvas) {
     }
     if (state.style !== "raised" || !state.text) return;
     const font = await loadFont(fontKeyFor(state.fontName));
-    const chars = [...state.text.toUpperCase()];
-    const letterH = 8 + state.size * 0.45;
     const depth = Math.max(0.8, state.raise);
-    const pitch = letterH * 0.92;
-    const usable = 250 - letterH - 24;
-    const count = chars.length;
-    const span = Math.min(usable, Math.max(0, (count - 1) * pitch));
-    const topY = state.direction === "down" ? 238 - letterH / 2 : 12 + letterH / 2 + span;
-    const step = count > 1 ? span / (count - 1) : 0;
-    const sign = state.direction === "down" ? -1 : 1;
-    const flip = state.direction === "up";
-    const mat = new THREE.MeshStandardMaterial({
+    const letterH = Math.min(32, 10 + state.size * 0.4);
+    const geo = new TextGeometry(state.text.toUpperCase(), {
+      font,
+      size: letterH,
+      depth,
+      curveSegments: 5,
+      bevelEnabled: true,
+      bevelThickness: Math.min(0.4, depth * 0.14),
+      bevelSize: Math.min(0.35, letterH * 0.04),
+      bevelSegments: 1
+    });
+    geo.computeBoundingBox();
+    geo.center();
+    const len = geo.boundingBox.max.x - geo.boundingBox.min.x;
+    const fit = Math.min(1, 226 / Math.max(len, 1));
+    geo.scale(fit, fit, 1);
+    const mesh = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({
       color: hexColor(state.color),
-      roughness: 0.4,
+      roughness: 0.38,
       metalness: 0.02
-    });
-    chars.forEach((ch, i) => {
-      if (ch === " ") return;
-      const geo = new TextGeometry(ch, {
-        font,
-        size: letterH,
-        depth,
-        curveSegments: 4,
-        bevelEnabled: true,
-        bevelThickness: Math.min(0.35, depth * 0.12),
-        bevelSize: Math.min(0.28, letterH * 0.03),
-        bevelSegments: 1
-      });
-      geo.computeBoundingBox();
-      geo.center();
-      const mesh = new THREE.Mesh(geo, mat);
-      mesh.rotation.set(0, -Math.PI / 2, flip ? Math.PI : 0);
-      mesh.position.set(0.4 + depth / 2, topY + sign * i * step, 0);
-      letters.add(mesh);
-    });
+    }));
+    const along = state.direction === "up" ? -1 : 1;
+    const across = state.direction === "up" ? -1 : 1;
+    mesh.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(
+      new THREE.Vector3(0, along, 0),
+      new THREE.Vector3(0, 0, across),
+      new THREE.Vector3(1, 0, 0)
+    ));
+    mesh.position.set(0.35 + depth / 2, 125, 0);
+    letters.add(mesh);
   }
 
   window.tapPreview = {
