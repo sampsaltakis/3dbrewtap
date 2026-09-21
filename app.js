@@ -15,32 +15,11 @@ const art = document.getElementById("art");
 const status = document.getElementById("status");
 const printZone = document.getElementById("printZone");
 const preview = document.getElementById("preview");
-const tapModel = document.getElementById("tapModel");
 let uploaded = false;
-let bodyColor = "#2C2C2C";
 let letterColor = "#F4EFE4";
 let letterStyle = "raised";
-
-const hexToRgb = (hex) => {
-  const n = String(hex || "#2C2C2C").replace("#", "");
-  return [
-    parseInt(n.slice(0, 2), 16) / 255,
-    parseInt(n.slice(2, 4), 16) / 255,
-    parseInt(n.slice(4, 6), 16) / 255
-  ];
-};
-
-const tintModel = (hex) => {
-  bodyColor = hex;
-  const model = tapModel && tapModel.model;
-  if (!model || !model.materials) return;
-  const rgb = hexToRgb(hex);
-  model.materials.forEach((mat) => {
-    try { mat.pbrMetallicRoughness.setBaseColorFactor([rgb[0], rgb[1], rgb[2], 1]); } catch (e) {}
-  });
-};
-
-if (tapModel) tapModel.addEventListener("load", () => tintModel(bodyColor));
+let letterDir = "down";
+const tap3 = () => window.tapPreview || {};
 
 const markSwatch = (root, btn) => {
   root.querySelectorAll(".swatch").forEach((s) => s.classList.remove("on"));
@@ -56,26 +35,19 @@ const raiseMm = () => (Number(document.getElementById("raise").value) / 10).toFi
 
 const applyRaise = () => {
   const mm = Number(raiseMm());
-  const px = mm * 3.2;
-  art.style.filter = "drop-shadow(0 " + px + "px 0 rgba(0,0,0,.24))";
-  art.style.textShadow = "0 " + Math.max(2, px * 0.4) + "px 0 rgba(0,0,0,.3)";
   document.getElementById("raiseVal").textContent = mm.toFixed(1) + " mm";
+  if (tap3().setRaise) tap3().setRaise(mm);
 };
 
 const renderLetters = () => {
   const raw = (document.getElementById("tapText").value || "").trim();
   art.className = "art " + letterStyle;
-  if (letterStyle === "none") {
-    art.innerHTML = "";
-    return;
-  }
-  if (letterStyle === "raised") {
-    const text = (raw || "").toUpperCase();
-    art.style.backgroundImage = "";
-    art.style.backgroundColor = "transparent";
-    art.style.color = letterColor;
-    art.innerHTML = text ? [...text].map((ch) => "<span>" + escapeChar(ch) + "</span>").join("") : "";
-    applyRaise();
+  if (tap3().setStyle) tap3().setStyle(letterStyle);
+  if (tap3().setText) tap3().setText(raw);
+  if (tap3().setLetterColor) tap3().setLetterColor(letterColor);
+  if (tap3().setDirection) tap3().setDirection(letterDir);
+  if (letterStyle === "none" || letterStyle === "raised") {
+    if (letterStyle === "none") art.innerHTML = "";
     return;
   }
   if (letterStyle === "ornament") {
@@ -85,7 +57,6 @@ const renderLetters = () => {
       art.style.backgroundColor = letterColor;
       art.textContent = raw ? raw.slice(0, 2).toUpperCase() : "";
     }
-    applyRaise();
     return;
   }
   art.style.color = letterColor === "#111111" ? "#fff" : "#111";
@@ -94,10 +65,7 @@ const renderLetters = () => {
     art.style.backgroundColor = letterColor;
     art.textContent = raw || "LOGO";
   }
-  applyRaise();
 };
-
-renderLetters();
 
 const fileToDataUrl = (file) => new Promise((resolve, reject) => {
   const reader = new FileReader();
@@ -153,9 +121,7 @@ document.getElementById("shapeChips").addEventListener("click", (e) => {
   if (!btn) return;
   document.querySelectorAll("#shapeChips .chip").forEach((c) => c.classList.remove("on"));
   btn.classList.add("on");
-  const modelSrc = btn.dataset.model;
-  if (preview) preview.classList.toggle("is-3d", Boolean(modelSrc));
-  if (modelSrc && tapModel && tapModel.getAttribute("src") !== modelSrc) tapModel.src = modelSrc;
+  if (preview) preview.classList.toggle("is-3d", Boolean(btn.dataset.model));
   handle.className = "preview-handle " + (btn.dataset.shape === "narrow" ? "modern" : btn.dataset.shape);
 });
 
@@ -168,12 +134,21 @@ document.getElementById("letterStyle").addEventListener("click", (e) => {
   renderLetters();
 });
 
+document.getElementById("letterDir").addEventListener("click", (e) => {
+  const btn = e.target.closest(".chip");
+  if (!btn) return;
+  document.querySelectorAll("#letterDir .chip").forEach((c) => c.classList.remove("on"));
+  btn.classList.add("on");
+  letterDir = btn.dataset.dir;
+  renderLetters();
+});
+
 document.getElementById("bodyColors").addEventListener("click", (e) => {
   const btn = e.target.closest(".swatch");
   if (!btn) return;
   markSwatch(e.currentTarget, btn);
   handle.style.background = btn.dataset.color;
-  tintModel(btn.dataset.color);
+  if (tap3().setColor) tap3().setColor(btn.dataset.color);
 });
 
 document.getElementById("artColors").addEventListener("click", (e) => {
@@ -199,20 +174,22 @@ document.getElementById("logoFile").addEventListener("change", (e) => {
   art.className = "art " + letterStyle;
   art.textContent = "";
   art.style.backgroundImage = "url(" + URL.createObjectURL(file) + ")";
+  if (tap3().setStyle) tap3().setStyle(letterStyle);
 });
 
 document.getElementById("tapText").addEventListener("input", renderLetters);
 
 document.getElementById("fontSelect").addEventListener("change", (e) => {
   art.style.fontFamily = e.target.value;
+  if (tap3().setFont) tap3().setFont(e.target.value);
 });
-art.style.fontFamily = document.getElementById("fontSelect").value;
 
 const bind = (id, fn) => document.getElementById(id).addEventListener("input", fn);
 bind("size", (e) => {
   if (letterStyle === "raised") art.style.fontSize = e.target.value + "px";
   else art.style.width = art.style.height = e.target.value * 2 + "px";
   document.getElementById("sizeVal").textContent = e.target.value;
+  if (tap3().setSize) tap3().setSize(e.target.value);
 });
 bind("raise", applyRaise);
 bind("rot", (e) => {
@@ -223,6 +200,8 @@ bind("pos", (e) => {
   art.style.top = e.target.value + "px";
   document.getElementById("posVal").textContent = e.target.value;
 });
+
+setTimeout(renderLetters, 600);
 applyRaise();
 
 document.getElementById("quoteForm").addEventListener("submit", async (e) => {
@@ -243,6 +222,7 @@ document.getElementById("quoteForm").addEventListener("submit", async (e) => {
       notes: document.getElementById("notes").value.trim(),
       shape: document.querySelector("#shapeChips .chip.on")?.dataset.shape || "",
       letterStyle,
+      letterDir: letterDir === "up" ? "bottom to top" : "top to bottom",
       font: document.getElementById("fontSelect").value,
       letterRaise: raiseMm() + " mm",
       qty: document.getElementById("qty").value,
