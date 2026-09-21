@@ -10,6 +10,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="styles.css" />
+  <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/4.0.0/model-viewer.min.js"></script>
 </head>
 <body>
   <header class="nav">
@@ -127,31 +128,47 @@
     </section>
     <section class="shapes-sec" id="shapes">
       <h2>Handle styles</h2>
-      <p class="sub">These are starting points. Custom geometry is on the table.</p>
+      <p class="sub">Narrow is a live 3D model. The others are layout starting points until their GLBs are added.</p>
       <div class="shape-grid">
+        <figure><div class="sil modern"></div><figcaption>Narrow</figcaption></figure>
         <figure><div class="sil classic"></div><figcaption>Classic</figcaption></figure>
-        <figure><div class="sil modern"></div><figcaption>Modern</figcaption></figure>
         <figure><div class="sil wide"></div><figcaption>Wide face</figcaption></figure>
         <figure><div class="sil sculpt"></div><figcaption>Sculpt</figcaption></figure>
       </div>
     </section>
     <section class="builder" id="build">
       <h2>Build your custom tap</h2>
-      <p class="sub">Live preview of shape, color, text, and logo. Final prints are reviewed before we quote.</p>
+      <p class="sub">Spin the Narrow handle, pick a color, place a logo, and send it for a quote.</p>
       <div class="builder-grid">
         <div class="preview-wrap">
-          <div class="preview" id="preview">
+          <div class="preview is-3d" id="preview">
+            <model-viewer
+              id="tapModel"
+              src="models/Tap-Narrow.glb"
+              alt="Narrow tap handle"
+              camera-controls
+              touch-action="pan-y"
+              shadow-intensity="0.8"
+              exposure="1.05"
+              camera-orbit="25deg 72deg 1.35m"
+              min-camera-orbit="auto 55deg auto"
+              max-camera-orbit="auto 95deg auto"
+              interaction-prompt="none"
+            ></model-viewer>
             <div class="preview-handle classic" id="handle">
-              <div class="print-zone" id="printZone"></div>
-              <div class="art" id="art">LOGO</div>
+              <div class="print-zone" id="printZone2d"></div>
+              <div class="art" id="art2d">LOGO</div>
             </div>
+            <div class="print-zone" id="printZone"></div>
+            <div class="art" id="art">LOGO</div>
           </div>
-          <p class="hint">This is a layout preview, not a 3D render. Upload a logo or type a name.</p>
+          <p class="hint">Drag to rotate the Narrow model. Other shapes use a flat layout preview until their files are added.</p>
         </div>
         <form class="panel" id="quoteForm">
           <label>Handle shape</label>
           <div class="chips" id="shapeChips">
-            <button type="button" class="chip on" data-shape="classic">Classic</button>
+            <button type="button" class="chip on" data-shape="narrow" data-model="models/Tap-Narrow.glb">Narrow</button>
+            <button type="button" class="chip" data-shape="classic">Classic</button>
             <button type="button" class="chip" data-shape="modern">Modern</button>
             <button type="button" class="chip" data-shape="wide">Wide</button>
             <button type="button" class="chip" data-shape="sculpt">Sculpt</button>
