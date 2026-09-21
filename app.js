@@ -49,10 +49,17 @@ const markSwatch = (root, btn) => {
 
 const escapeChar = (ch) => {
   if (ch === " ") return "&nbsp;";
-  return String(ch)
-    .replace(/&/g, "&")
-    .replace(/</g, "<")
-    .replace(/>/g, ">");
+  return String(ch).replace(/&/g, "&").replace(/</g, "<").replace(/>/g, ">");
+};
+
+const raiseMm = () => (Number(document.getElementById("raise").value) / 10).toFixed(1);
+
+const applyRaise = () => {
+  const mm = Number(raiseMm());
+  const px = mm * 3.2;
+  art.style.filter = "drop-shadow(0 " + px + "px 0 rgba(0,0,0,.24))";
+  art.style.textShadow = "0 " + Math.max(2, px * 0.4) + "px 0 rgba(0,0,0,.3)";
+  document.getElementById("raiseVal").textContent = mm.toFixed(1) + " mm";
 };
 
 const renderLetters = () => {
@@ -68,6 +75,7 @@ const renderLetters = () => {
     art.style.backgroundColor = "transparent";
     art.style.color = letterColor;
     art.innerHTML = text ? [...text].map((ch) => "<span>" + escapeChar(ch) + "</span>").join("") : "";
+    applyRaise();
     return;
   }
   if (letterStyle === "ornament") {
@@ -77,6 +85,7 @@ const renderLetters = () => {
       art.style.backgroundColor = letterColor;
       art.textContent = raw ? raw.slice(0, 2).toUpperCase() : "";
     }
+    applyRaise();
     return;
   }
   art.style.color = letterColor === "#111111" ? "#fff" : "#111";
@@ -85,6 +94,7 @@ const renderLetters = () => {
     art.style.backgroundColor = letterColor;
     art.textContent = raw || "LOGO";
   }
+  applyRaise();
 };
 
 renderLetters();
@@ -204,6 +214,7 @@ bind("size", (e) => {
   else art.style.width = art.style.height = e.target.value * 2 + "px";
   document.getElementById("sizeVal").textContent = e.target.value;
 });
+bind("raise", applyRaise);
 bind("rot", (e) => {
   art.style.transform = "translateX(-50%) rotate(" + e.target.value + "deg)";
   document.getElementById("rotVal").textContent = e.target.value + "\u00b0";
@@ -212,6 +223,7 @@ bind("pos", (e) => {
   art.style.top = e.target.value + "px";
   document.getElementById("posVal").textContent = e.target.value;
 });
+applyRaise();
 
 document.getElementById("quoteForm").addEventListener("submit", async (e) => {
   e.preventDefault();
@@ -232,6 +244,7 @@ document.getElementById("quoteForm").addEventListener("submit", async (e) => {
       shape: document.querySelector("#shapeChips .chip.on")?.dataset.shape || "",
       letterStyle,
       font: document.getElementById("fontSelect").value,
+      letterRaise: raiseMm() + " mm",
       qty: document.getElementById("qty").value,
       tapText: document.getElementById("tapText").value.trim()
     }, document.getElementById("logoFile").files[0], status);
