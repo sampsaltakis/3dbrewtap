@@ -18,6 +18,8 @@ const preview = document.getElementById("preview");
 const tapModel = document.getElementById("tapModel");
 let uploaded = false;
 let bodyColor = "#2C2C2C";
+let letterColor = "#F4EFE4";
+let letterStyle = "raised";
 
 const hexToRgb = (hex) => {
   const n = String(hex || "#2C2C2C").replace("#", "");
@@ -44,6 +46,48 @@ const markSwatch = (root, btn) => {
   root.querySelectorAll(".swatch").forEach((s) => s.classList.remove("on"));
   btn.classList.add("on");
 };
+
+const escapeChar = (ch) => {
+  if (ch === " ") return "&nbsp;";
+  return String(ch)
+    .replace(/&/g, "&")
+    .replace(/</g, "<")
+    .replace(/>/g, ">");
+};
+
+const renderLetters = () => {
+  const raw = (document.getElementById("tapText").value || "").trim();
+  art.className = "art " + letterStyle;
+  if (letterStyle === "none") {
+    art.innerHTML = "";
+    return;
+  }
+  if (letterStyle === "raised") {
+    const text = (raw || "").toUpperCase();
+    art.style.backgroundImage = "";
+    art.style.backgroundColor = "transparent";
+    art.style.color = letterColor;
+    art.innerHTML = text ? [...text].map((ch) => "<span>" + escapeChar(ch) + "</span>").join("") : "";
+    return;
+  }
+  if (letterStyle === "ornament") {
+    art.style.color = "#111";
+    if (!uploaded) {
+      art.style.backgroundImage = "";
+      art.style.backgroundColor = letterColor;
+      art.textContent = raw ? raw.slice(0, 2).toUpperCase() : "";
+    }
+    return;
+  }
+  art.style.color = letterColor === "#111111" ? "#fff" : "#111";
+  if (!uploaded) {
+    art.style.backgroundImage = "";
+    art.style.backgroundColor = letterColor;
+    art.textContent = raw || "LOGO";
+  }
+};
+
+renderLetters();
 
 const fileToDataUrl = (file) => new Promise((resolve, reject) => {
   const reader = new FileReader();
@@ -105,6 +149,15 @@ document.getElementById("shapeChips").addEventListener("click", (e) => {
   handle.className = "preview-handle " + (btn.dataset.shape === "narrow" ? "modern" : btn.dataset.shape);
 });
 
+document.getElementById("letterStyle").addEventListener("click", (e) => {
+  const btn = e.target.closest(".chip");
+  if (!btn) return;
+  document.querySelectorAll("#letterStyle .chip").forEach((c) => c.classList.remove("on"));
+  btn.classList.add("on");
+  letterStyle = btn.dataset.style;
+  renderLetters();
+});
+
 document.getElementById("bodyColors").addEventListener("click", (e) => {
   const btn = e.target.closest(".swatch");
   if (!btn) return;
@@ -117,9 +170,8 @@ document.getElementById("artColors").addEventListener("click", (e) => {
   const btn = e.target.closest(".swatch");
   if (!btn) return;
   markSwatch(e.currentTarget, btn);
-  if (!uploaded) art.style.backgroundImage = "";
-  art.style.backgroundColor = btn.dataset.color;
-  art.style.color = btn.dataset.ink || "#111";
+  letterColor = btn.dataset.ink || btn.dataset.color;
+  renderLetters();
 });
 
 document.getElementById("printArea").addEventListener("change", (e) => {
@@ -130,25 +182,30 @@ document.getElementById("logoFile").addEventListener("change", (e) => {
   const file = e.target.files[0];
   if (!file) return;
   uploaded = true;
+  letterStyle = letterStyle === "raised" ? "plate" : letterStyle;
+  document.querySelectorAll("#letterStyle .chip").forEach((c) => {
+    c.classList.toggle("on", c.dataset.style === letterStyle);
+  });
+  art.className = "art " + letterStyle;
   art.textContent = "";
-  art.style.backgroundImage = `url(${URL.createObjectURL(file)})`;
+  art.style.backgroundImage = "url(" + URL.createObjectURL(file) + ")";
 });
 
-document.getElementById("tapText").addEventListener("input", (e) => {
-  if (!uploaded) art.textContent = e.target.value || "LOGO";
-});
+document.getElementById("tapText").addEventListener("input", renderLetters);
 
 document.getElementById("fontSelect").addEventListener("change", (e) => {
   art.style.fontFamily = e.target.value;
 });
+art.style.fontFamily = document.getElementById("fontSelect").value;
 
 const bind = (id, fn) => document.getElementById(id).addEventListener("input", fn);
 bind("size", (e) => {
-  art.style.width = art.style.height = e.target.value + "px";
+  if (letterStyle === "raised") art.style.fontSize = e.target.value + "px";
+  else art.style.width = art.style.height = e.target.value * 2 + "px";
   document.getElementById("sizeVal").textContent = e.target.value;
 });
 bind("rot", (e) => {
-  art.style.transform = `translateX(-50%) rotate(${e.target.value}deg)`;
+  art.style.transform = "translateX(-50%) rotate(" + e.target.value + "deg)";
   document.getElementById("rotVal").textContent = e.target.value + "\u00b0";
 });
 bind("pos", (e) => {
@@ -173,6 +230,8 @@ document.getElementById("quoteForm").addEventListener("submit", async (e) => {
       phone,
       notes: document.getElementById("notes").value.trim(),
       shape: document.querySelector("#shapeChips .chip.on")?.dataset.shape || "",
+      letterStyle,
+      font: document.getElementById("fontSelect").value,
       qty: document.getElementById("qty").value,
       tapText: document.getElementById("tapText").value.trim()
     }, document.getElementById("logoFile").files[0], status);
