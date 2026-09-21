@@ -10,6 +10,14 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Anton&family=Archivo+Black&family=Bungee&family=Fredoka:wght@600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="styles.css" />
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://unpkg.com/three@0.170.0/build/three.module.js",
+      "three/addons/": "https://unpkg.com/three@0.170.0/examples/jsm/"
+    }
+  }
+  </script>
 </head>
 <body>
   <header class="nav">
@@ -17,10 +25,10 @@
       <img class="lockup" src="images/logo-3dbrewtap.png" alt="3D BrewTap" />
     </a>
     <nav>
+      <a href="#work">Recent Builds</a>
+      <a href="#how">How it Works</a>
       <a href="#build">Build</a>
-      <a href="#send-logo">Send a logo</a>
-      <a href="#work">Work</a>
-      <a href="#how">How it works</a>
+      <a href="#send-logo">Send a Logo</a>
     </nav>
     <a class="btn" href="#build">Build your tap</a>
   </header>
@@ -109,7 +117,7 @@
     </section>
     <section class="builder" id="send-logo">
       <h2>Just send a logo</h2>
-      <p class="sub">Name, email, phone, and a logo. We design the handle and email you back.</p>
+      <p class="sub">Upload your logo and we'll design the handle for you.</p>
       <form class="panel logo-form" id="logoForm">
         <label for="logoName">Name</label>
         <input id="logoName" name="name" type="text" required placeholder="Your name" />
