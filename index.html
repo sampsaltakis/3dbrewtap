@@ -8,7 +8,7 @@
   <link rel="icon" href="favicon.svg" type="image/svg+xml" />
   <link rel="apple-touch-icon" href="favicon.svg" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Anton&family=Archivo+Black&family=Bungee&family=Fredoka:wght@600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="styles.css" />
   <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/4.0.0/model-viewer.min.js"></script>
 </head>
@@ -138,7 +138,7 @@
     </section>
     <section class="builder" id="build">
       <h2>Build your custom tap</h2>
-      <p class="sub">Spin the Narrow handle, pick a color, place a logo, and send it for a quote.</p>
+      <p class="sub">Spin the Narrow handle, stack raised letters like Fat Punch, or skip letters and use a top ornament.</p>
       <div class="builder-grid">
         <div class="preview-wrap">
           <div class="preview is-3d" id="preview">
@@ -155,14 +155,11 @@
               max-camera-orbit="auto 95deg auto"
               interaction-prompt="none"
             ></model-viewer>
-            <div class="preview-handle classic" id="handle">
-              <div class="print-zone" id="printZone2d"></div>
-              <div class="art" id="art2d">LOGO</div>
-            </div>
+            <div class="preview-handle classic" id="handle"></div>
             <div class="print-zone" id="printZone"></div>
-            <div class="art" id="art">LOGO</div>
+            <div class="art raised" id="art"></div>
           </div>
-          <p class="hint">Drag to rotate the Narrow model. Other shapes use a flat layout preview until their files are added.</p>
+          <p class="hint">Raised letters run down the face, the same way Fat Punch and Fat On Tap are printed. Turn them off if you only want a logo or a top cap.</p>
         </div>
         <form class="panel" id="quoteForm">
           <label>Handle shape</label>
@@ -183,32 +180,42 @@
             <button type="button" class="swatch" data-color="#F4F1EC" style="background:#F4F1EC" aria-label="Cream"></button>
             <button type="button" class="swatch" data-color="#FFFFFF" style="background:#FFFFFF" aria-label="White"></button>
           </div>
-          <label>Letter / plate color</label>
+          <label>Letter style</label>
+          <div class="chips" id="letterStyle">
+            <button type="button" class="chip" data-style="none">None</button>
+            <button type="button" class="chip on" data-style="raised">Raised letters</button>
+            <button type="button" class="chip" data-style="plate">Plate</button>
+            <button type="button" class="chip" data-style="ornament">Top ornament</button>
+          </div>
+          <label>Letter / ornament color</label>
           <div class="swatches" id="artColors">
-            <button type="button" class="swatch on" data-color="#FFFFFF" data-ink="#111111" style="background:#FFFFFF" aria-label="White plate"></button>
-            <button type="button" class="swatch" data-color="#111111" data-ink="#FFFFFF" style="background:#111111" aria-label="Black plate"></button>
-            <button type="button" class="swatch" data-color="#C9A227" data-ink="#111111" style="background:#C9A227" aria-label="Gold plate"></button>
-            <button type="button" class="swatch" data-color="#FF5A1F" data-ink="#FFFFFF" style="background:#FF5A1F" aria-label="Orange plate"></button>
+            <button type="button" class="swatch on" data-color="#F4EFE4" data-ink="#F4EFE4" style="background:#F4EFE4" aria-label="Cream"></button>
+            <button type="button" class="swatch" data-color="#FFFFFF" data-ink="#FFFFFF" style="background:#FFFFFF" aria-label="White"></button>
+            <button type="button" class="swatch" data-color="#111111" data-ink="#111111" style="background:#111111" aria-label="Black"></button>
+            <button type="button" class="swatch" data-color="#C9A227" data-ink="#C9A227" style="background:#C9A227" aria-label="Gold"></button>
+            <button type="button" class="swatch" data-color="#FF5A1F" data-ink="#FF5A1F" style="background:#FF5A1F" aria-label="Orange"></button>
           </div>
           <label class="check-row"><input id="printArea" type="checkbox" /> Show print area</label>
           <label for="logoFile">Logo or image</label>
           <input id="logoFile" type="file" accept="image/*" />
           <label for="tapText">Text on handle</label>
-          <input id="tapText" type="text" maxlength="40" placeholder="Brewery or beer name" />
-          <label for="fontSelect">Font</label>
+          <input id="tapText" type="text" maxlength="24" placeholder="FAT PUNCH" />
+          <label for="fontSelect">Typeface</label>
           <select id="fontSelect">
-            <option>Outfit</option>
-            <option>Impact</option>
-            <option>Georgia</option>
-            <option>Trebuchet MS</option>
-            <option>Courier New</option>
+            <option value="Anton, sans-serif">Anton</option>
+            <option value="Bungee, sans-serif">Bungee</option>
+            <option value="Archivo Black, sans-serif">Archivo Black</option>
+            <option value="Fredoka, sans-serif">Fredoka</option>
+            <option value="Outfit, sans-serif">Outfit</option>
+            <option value="Impact, sans-serif">Impact</option>
+            <option value="Georgia, serif">Georgia</option>
           </select>
-          <label>Size <span id="sizeVal">66</span></label>
-          <input id="size" type="range" min="36" max="140" value="66" />
-          <label>Rotate <span id="rotVal">-8°</span></label>
-          <input id="rot" type="range" min="-45" max="45" value="-8" />
-          <label>Position <span id="posVal">70</span></label>
-          <input id="pos" type="range" min="16" max="170" value="70" />
+          <label>Letter size <span id="sizeVal">34</span></label>
+          <input id="size" type="range" min="18" max="64" value="34" />
+          <label>Rotate <span id="rotVal">0°</span></label>
+          <input id="rot" type="range" min="-20" max="20" value="0" />
+          <label>Position <span id="posVal">48</span></label>
+          <input id="pos" type="range" min="8" max="180" value="48" />
           <label for="qty">Quantity</label>
           <input id="qty" type="number" min="1" value="1" />
           <label for="custName">Name</label>
