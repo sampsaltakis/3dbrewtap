@@ -139,10 +139,12 @@ input, select, textarea { width: 100%; padding: 10px 12px; border: 1px solid #e4
   height: 560px; border-radius: 18px; background: #171717;
   display: grid; place-items: center; position: relative; overflow: hidden;
 }
-.preview model-viewer { width: 100%; height: 100%; --poster-color: #171717; }
+.preview canvas {
+  width: 100%; height: 100%; display: block; touch-action: none;
+}
 .preview .preview-handle { display: none; }
-.preview.is-3d model-viewer { display: block; }
-.preview:not(.is-3d) model-viewer { display: none; }
+.preview.is-3d canvas { display: block; }
+.preview:not(.is-3d) canvas { display: none; }
 .preview:not(.is-3d) .preview-handle { display: block; }
 .preview-handle { width: 92px; height: 280px; background: #2C2C2C; border-radius: 16px 16px 10px 10px; position: relative; transition: .2s width,.2s border-radius,.2s background; }
 .preview-handle.modern { width: 64px; border-radius: 8px; }
@@ -157,15 +159,12 @@ input, select, textarea { width: 100%; padding: 10px 12px; border: 1px solid #e4
   position: absolute; left: 50%; top: 48px; transform: translateX(-50%) rotate(0deg);
   z-index: 3; pointer-events: none; text-align: center; font-weight: 800;
 }
-.art.none { display: none; }
+.art.none, .preview.is-3d .art.raised { display: none; }
 .art.raised {
   display: flex; flex-direction: column; align-items: center;
   width: auto; height: auto; background: transparent;
   color: #F4EFE4; line-height: .86; font-size: 34px;
-  text-shadow: 0 3px 0 rgba(0,0,0,.22);
-  filter: drop-shadow(0 6px 0 rgba(0,0,0,.12));
 }
-.art.raised span { display: block; }
 .art.plate {
   width: 66px; height: 66px; background: #fff; color: #111;
   display: grid; place-items: center; border-radius: 8px; overflow: hidden;
