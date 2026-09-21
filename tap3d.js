@@ -29,18 +29,111 @@ const fontKeyFor = (name) => {
   return "anton";
 };
 
-const pathToShapes = (otPath) => {
-  const shapePath = new THREE.ShapePath();
+const sampleCubic = (p0, p1, p2, p3, steps) => {
+  const pts = [];
+  for (let i = 1; i <= steps; i += 1) {
+    const t = i / steps;
+    const u = 1 - t;
+    pts.push(new THREE.Vector2(
+      u*u*u*p0.x + 3*u*u*t*p1.x + 3*u*t*t*p2.x + t*t*t*p3.x,
+      u*u*u*p0.y + 3*u*u*t*p1.y + 3*u*t*t*p2.y + t*t*t*p3.y
+    ));
+  }
+  return pts;
+};
+
+const sampleQuad = (p0, p1, p2, steps) => {
+  const pts = [];
+  for (let i = 1; i <= steps; i += 1) {
+    const t = i / steps;
+    const u = 1 - t;
+    pts.push(new THREE.Vector2(
+      u*u*p0.x + 2*u*t*p1.x + t*t*p2.x,
+      u*u*p0.y + 2*u*t*p1.y + t*t*p2.y
+    ));
+  }
+  return pts;
+};
+
+const contoursFromPath = (otPath) => {
+  const contours = [];
+  let current = [];
+  let x = 0;
+  let y = 0;
+  const push = (nx, ny) => current.push(new THREE.Vector2(nx, -ny));
   otPath.commands.forEach((cmd) => {
-    if (cmd.type === "M") shapePath.moveTo(cmd.x, -cmd.y);
-    else if (cmd.type === "L") shapePath.lineTo(cmd.x, -cmd.y);
-    else if (cmd.type === "C") shapePath.bezierCurveTo(cmd.x1, -cmd.y1, cmd.x2, -cmd.y2, cmd.x, -cmd.y);
-    else if (cmd.type === "Q") shapePath.quadraticCurveTo(cmd.x1, -cmd.y1, cmd.x, -cmd.y);
-    else if (cmd.type === "Z") {
-      if (shapePath.currentPath) shapePath.currentPath.closePath();
+    if (cmd.type === "M") {
+      current = [];
+      contours.push(current);
+      x = cmd.x; y = cmd.y;
+      push(x, y);
+    } else if (cmd.type === "L") {
+      x = cmd.x; y = cmd.y;
+      push(x, y);
+    } else if (cmd.type === "C") {
+      const pts = sampleCubic(
+        new THREE.Vector2(x, y),
+        new THREE.Vector2(cmd.x1, cmd.y1),
+        new THREE.Vector2(cmd.x2, cmd.y2),
+        new THREE.Vector2(cmd.x, cmd.y),
+        8
+      );
+      pts.forEach((p) => push(p.x, p.y));
+      x = cmd.x; y = cmd.y;
+    } else if (cmd.type === "Q") {
+      const pts = sampleQuad(
+        new THREE.Vector2(x, y),
+        new THREE.Vector2(cmd.x1, cmd.y1),
+        new THREE.Vector2(cmd.x, cmd.y),
+        8
+      );
+      pts.forEach((p) => push(p.x, p.y));
+      x = cmd.x; y = cmd.y;
+    } else if (cmd.type === "Z") {
+      if (current.length && (current[0].x !== current[current.length - 1].x || current[0].y !== current[current.length - 1].y)) {
+        current.push(current[0].clone());
+      }
     }
   });
-  return shapePath.toShapes(true);
+  return contours.filter((c) => c.length > 3);
+};
+
+const pointIn = (pts, pt) => {
+  let inside = false;
+  for (let i = 0, j = pts.length - 1; i < pts.length; j = i++) {
+    const a = pts[i];
+    const b = pts[j];
+    const hit = ((a.y > pt.y) !== (b.y > pt.y)) && (pt.x < (b.x - a.x) * (pt.y - a.y) / ((b.y - a.y) || 1e-9) + a.x);
+    if (hit) inside = !inside;
+  }
+  return inside;
+};
+
+const shapesFromGlyph = (otPath) => {
+  const contours = contoursFromPath(otPath);
+  if (!contours.length) return [];
+  const items = contours.map((pts) => ({
+    pts,
+    area: Math.abs(THREE.ShapeUtils.area(pts)),
+    cw: THREE.ShapeUtils.isClockWise(pts)
+  })).sort((a, b) => b.area - a.area);
+  const used = new Set();
+  const shapes = [];
+  items.forEach((item, i) => {
+    if (used.has(i)) return;
+    const shape = new THREE.Shape(item.pts);
+    items.forEach((other, j) => {
+      if (i === j || used.has(j) || other.area >= item.area) return;
+      const mid = other.pts[Math.floor(other.pts.length / 2)];
+      if (pointIn(item.pts, mid)) {
+        shape.holes.push(new THREE.Path(other.pts));
+        used.add(j);
+      }
+    });
+    used.add(i);
+    shapes.push(shape);
+  });
+  return shapes;
 };
 
 const state = {
@@ -95,12 +188,7 @@ if (!canvas) {
   };
   resize();
   window.addEventListener("resize", resize);
-
-  const tick = () => {
-    controls.update();
-    renderer.render(scene, camera);
-    requestAnimationFrame(tick);
-  };
+  const tick = () => { controls.update(); renderer.render(scene, camera); requestAnimationFrame(tick); };
   tick();
 
   new GLTFLoader().load("models/Tap-Narrow.glb", (gltf) => {
@@ -129,28 +217,28 @@ if (!canvas) {
     if (state.style !== "raised" || !state.text) return;
     const font = await loadFontFile(fontKeyFor(state.fontName));
     const depth = Math.max(1.2, state.raise);
-    const letterH = Math.min(32, 10 + state.size * 0.4);
-    const otPaths = font.getPaths(state.text.toUpperCase(), 0, 0, letterH);
-    const shapes = otPaths.flatMap(pathToShapes).filter(Boolean);
+    const letterH = Math.min(30, 10 + state.size * 0.38);
+    const raw = state.text.toUpperCase();
+    const shapes = [];
+    let x = 0;
+    [...raw].forEach((ch) => {
+      const glyph = font.charToGlyph(ch);
+      const path = glyph.getPath(x, 0, letterH);
+      shapes.push(...shapesFromGlyph(path));
+      x += font.getAdvanceWidth(ch, letterH);
+    });
     if (!shapes.length) return;
     const geo = new THREE.ExtrudeGeometry(shapes, {
       depth,
       steps: 1,
-      bevelEnabled: true,
-      bevelThickness: Math.max(0.25, depth * 0.12),
-      bevelSize: Math.min(0.45, letterH * 0.05),
-      bevelSegments: 2,
-      curveSegments: 8
+      bevelEnabled: false,
+      curveSegments: 1
     });
     geo.computeVertexNormals();
     geo.computeBoundingBox();
     geo.center();
     const box = geo.boundingBox;
-    const len = box.max.x - box.min.x;
-    const tall = box.max.y - box.min.y;
-    const fitW = 226 / Math.max(len, 1);
-    const fitH = 34 / Math.max(tall, 1);
-    const fit = Math.min(1, fitW, fitH);
+    const fit = Math.min(1, 226 / Math.max(box.max.x - box.min.x, 1), 34 / Math.max(box.max.y - box.min.y, 1));
     geo.scale(fit, fit, 1);
     const mesh = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({
       color: new THREE.Color(state.color),
