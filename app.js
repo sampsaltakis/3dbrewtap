@@ -14,7 +14,7 @@ const handle = document.getElementById("handle");
 const status = document.getElementById("status");
 const printZone = document.getElementById("printZone");
 const preview = document.getElementById("preview");
-let letterColor = "#FFFFFF";
+let letterColor = "#111111";
 let letterDir = "down";
 const tap3 = () => window.tapPreview || {};
 const on = (id, ev, fn) => {
