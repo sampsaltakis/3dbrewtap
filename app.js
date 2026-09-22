@@ -90,14 +90,14 @@ const postQuote = async (fields, file, statusEl) => {
   statusEl.textContent = "Sending…";
   if (file && file.size > 5000000) throw new Error("Logo is too large. Use a file under 5 MB.");
   if (file) {
-    statusEl.textContent = "Saving logo to Dropbox…";
+    statusEl.textContent = "Sending…";
     fields.dropboxPath = await saveToDropbox(file, fields.name);
   }
   if (fields.source === "Build your custom tap" && tap3().capture) {
     try {
       const shot = tap3().capture();
       if (shot && shot.indexOf("data:image") === 0) {
-        statusEl.textContent = "Saving preview image to Dropbox…";
+        statusEl.textContent = "Sending…";
         const compact = await shrinkShot(shot);
         const label = (fields.tapText || "tap").replace(/[^a-zA-Z0-9]+/g, "-").slice(0, 24) || "tap";
         fields.dropboxPreview = await saveDropboxPayload(fields.name, label + "-preview.jpg", compact);
@@ -121,14 +121,7 @@ const postQuote = async (fields, file, statusEl) => {
   if (!res.ok || data.success === "false" || data.success === false) {
     throw new Error(data.message || "Could not send the request.");
   }
-  if (fields.dropboxPreviewError && !fields.dropboxPreview) {
-    statusEl.textContent = "Sent to orders@3dbrewtap.com. Preview was not saved: " + fields.dropboxPreviewError;
-    return;
-  }
-  const saved = [fields.dropboxPath && "logo", fields.dropboxPreview && "preview"].filter(Boolean);
-  statusEl.textContent = saved.length
-    ? "Sent to orders@3dbrewtap.com. Saved to Dropbox: " + saved.join(" and ") + "."
-    : "Sent to orders@3dbrewtap.com.";
+  statusEl.textContent = "Sent to orders@3dbrewtap.com.";
 };
 
 on("shapeChips", "click", (e) => {
