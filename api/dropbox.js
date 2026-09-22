@@ -35,6 +35,17 @@ module.exports = async function handler(req, res) {
     const path = folder + "/" + stamp + "-" + safeName + "-" + fileName;
 
     const binary = Buffer.from(fileData, "base64");
+    if (binary.length > 4000000) return send(413, { error: "File is too large for Dropbox upload. Use a smaller image." });
+
+    await fetch("https://api.dropboxapi.com/2/files/create_folder_v2", {
+      method: "POST",
+      headers: {
+        Authorization: "Bearer " + token,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ path: folder, autorename: false })
+    }).catch(function () { return null; });
+
     const drop = await fetch("https://content.dropboxapi.com/2/files/upload", {
       method: "POST",
       headers: {
@@ -45,7 +56,21 @@ module.exports = async function handler(req, res) {
       body: binary
     });
     const text = await drop.text();
-    if (!drop.ok) return send(502, { error: "Dropbox rejected the upload.", detail: text.slice(0, 300) });
+    if (!drop.ok) {
+      let summary = "Dropbox rejected the upload.";
+      try {
+        const err = JSON.parse(text);
+        const tag = err.error && err.error[".tag"];
+        if (err.error_summary && String(err.error_summary).indexOf("expired_access_token") !== -1) {
+          summary = "Dropbox login expired. Reconnect the Dropbox token in Vercel.";
+        } else if (tag === "insufficient_space") {
+          summary = "Dropbox is out of space.";
+        } else if (err.error_summary) {
+          summary = "Dropbox rejected the upload: " + String(err.error_summary).slice(0, 120);
+        }
+      } catch (e) {}
+      return send(502, { error: summary, detail: text.slice(0, 300) });
+    }
     const meta = JSON.parse(text);
     return send(200, { ok: true, path: meta.path_display || path });
   } catch (err) {
