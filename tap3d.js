@@ -146,9 +146,9 @@ const state = {
 
 const canvas = document.getElementById("tapCanvas");
 if (!canvas) {
-  window.tapPreview = { setColor() {}, setText() {}, setFont() {}, setRaise() {}, setSize() {}, setDirection() {}, setStyle() {}, setLetterColor() {} };
+  window.tapPreview = { setColor() {}, setText() {}, setFont() {}, setRaise() {}, setSize() {}, setDirection() {}, setStyle() {}, setLetterColor() {}, capture() { return ""; } };
 } else {
-  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false });
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false, preserveDrawingBuffer: true });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
   renderer.setClearColor(0x171717, 1);
   renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -261,6 +261,10 @@ if (!canvas) {
     setSize(n) { state.size = Number(n) || 34; rebuildLetters(); },
     setDirection(dir) { state.direction = dir === "up" ? "up" : "down"; rebuildLetters(); },
     setStyle(style) { state.style = style || "raised"; rebuildLetters(); },
-    setLetterColor(hex) { state.color = hex; rebuildLetters(); }
+    setLetterColor(hex) { state.color = hex; rebuildLetters(); },
+    capture() {
+      renderer.render(scene, camera);
+      return canvas.toDataURL("image/png");
+    }
   };
 }
