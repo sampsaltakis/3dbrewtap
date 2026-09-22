@@ -112,10 +112,7 @@ const pointIn = (pts, pt) => {
 const shapesFromGlyph = (otPath) => {
   const contours = contoursFromPath(otPath);
   if (!contours.length) return [];
-  const items = contours.map((pts) => ({
-    pts,
-    area: Math.abs(THREE.ShapeUtils.area(pts))
-  })).sort((a, b) => b.area - a.area);
+  const items = contours.map((pts) => ({ pts, area: Math.abs(THREE.ShapeUtils.area(pts)) })).sort((a, b) => b.area - a.area);
   const used = new Set();
   const shapes = [];
   items.forEach((item, i) => {
@@ -138,7 +135,7 @@ const shapesFromGlyph = (otPath) => {
 const state = {
   text: "",
   style: "raised",
-  color: "#FFFFFF",
+  color: "#111111",
   body: "#8A8A8A",
   size: 34,
   raise: 2,
