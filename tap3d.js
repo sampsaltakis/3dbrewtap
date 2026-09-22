@@ -139,14 +139,15 @@ const state = {
   body: "#8A8A8A",
   size: 34,
   raise: 2,
-  direction: "down",
+  direction: "up",
   fontName: "anton",
+  model: "models/Tap-Narrow.glb",
   ready: false
 };
 
 const canvas = document.getElementById("tapCanvas");
 if (!canvas) {
-  window.tapPreview = { setColor() {}, setText() {}, setFont() {}, setRaise() {}, setSize() {}, setDirection() {}, setStyle() {}, setLetterColor() {}, capture() { return ""; } };
+  window.tapPreview = { setColor() {}, setText() {}, setFont() {}, setRaise() {}, setSize() {}, setDirection() {}, setStyle() {}, setLetterColor() {}, setModel() {}, capture() { return ""; } };
 } else {
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false, preserveDrawingBuffer: true });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
@@ -159,7 +160,7 @@ if (!canvas) {
   controls.enableDamping = true;
   controls.minDistance = 160;
   controls.maxDistance = 1200;
-  controls.target.set(-18, 125, 0);
+  controls.target.set(0, 125, 0);
   camera.position.set(420, 125, 0);
 
   scene.add(new THREE.AmbientLight(0xffffff, 0.85));
@@ -172,10 +173,14 @@ if (!canvas) {
 
   const root = new THREE.Group();
   scene.add(root);
+  const bodyGroup = new THREE.Group();
   const letters = new THREE.Group();
+  root.add(bodyGroup);
   root.add(letters);
   let bodyMats = [];
+  let bodyBox = new THREE.Box3(new THREE.Vector3(-20, 0, -20), new THREE.Vector3(0, 250, 20));
   let framed = false;
+  const loader = new GLTFLoader();
 
   const frameTap = () => {
     const box = new THREE.Box3().setFromObject(root);
@@ -208,7 +213,22 @@ if (!canvas) {
   const tick = () => { controls.update(); renderer.render(scene, camera); requestAnimationFrame(tick); };
   tick();
 
-  new GLTFLoader().load("models/Tap-Narrow.glb", (gltf) => {
+  const clearGroup = (group) => {
+    while (group.children.length) {
+      const child = group.children.pop();
+      child.traverse((obj) => {
+        if (obj.geometry) obj.geometry.dispose();
+        if (obj.material) {
+          if (Array.isArray(obj.material)) obj.material.forEach((m) => m.dispose());
+          else obj.material.dispose();
+        }
+      });
+    }
+  };
+
+  const applyBody = (gltf) => {
+    clearGroup(bodyGroup);
+    bodyMats = [];
     gltf.scene.traverse((obj) => {
       if (obj.isMesh) {
         obj.material = new THREE.MeshStandardMaterial({
@@ -219,19 +239,22 @@ if (!canvas) {
         bodyMats.push(obj.material);
       }
     });
-    root.add(gltf.scene);
+    bodyGroup.add(gltf.scene);
+    bodyBox.setFromObject(bodyGroup);
     state.ready = true;
     resize();
     frameTap();
     rebuildLetters();
-  });
+  };
+
+  const loadModel = (url) => {
+    state.model = url;
+    loader.load(url, applyBody);
+  };
+  loadModel(state.model);
 
   async function rebuildLetters() {
-    while (letters.children.length) {
-      const child = letters.children.pop();
-      if (child.geometry) child.geometry.dispose();
-      if (child.material) child.material.dispose();
-    }
+    clearGroup(letters);
     if (state.style !== "raised" || !state.text) return;
     const font = await loadFontFile(fontKeyFor(state.fontName));
     const depth = Math.max(1.2, state.raise);
@@ -256,7 +279,9 @@ if (!canvas) {
     geo.computeBoundingBox();
     geo.center();
     const box = geo.boundingBox;
-    const fit = Math.min(1, 226 / Math.max(box.max.x - box.min.x, 1), 34 / Math.max(box.max.y - box.min.y, 1));
+    const usableY = Math.max(40, (bodyBox.max.y - bodyBox.min.y) * 0.9);
+    const usableZ = Math.max(16, (bodyBox.max.z - bodyBox.min.z) * 0.7);
+    const fit = Math.min(1, usableY / Math.max(box.max.x - box.min.x, 1), usableZ / Math.max(box.max.y - box.min.y, 1));
     geo.scale(fit, fit, 1);
     const mesh = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({
       color: new THREE.Color(state.color),
@@ -271,7 +296,9 @@ if (!canvas) {
       new THREE.Vector3(0, 0, across),
       new THREE.Vector3(1, 0, 0)
     ));
-    mesh.position.set(0.2 + depth / 2, 125, 0);
+    const faceX = (Number.isFinite(bodyBox.max.x) ? bodyBox.max.x : 0) + depth / 2;
+    const midY = (bodyBox.min.y + bodyBox.max.y) / 2;
+    mesh.position.set(faceX, midY, 0);
     letters.add(mesh);
   }
 
@@ -284,6 +311,7 @@ if (!canvas) {
     setDirection(dir) { state.direction = dir === "up" ? "up" : "down"; rebuildLetters(); },
     setStyle(style) { state.style = style || "raised"; rebuildLetters(); },
     setLetterColor(hex) { state.color = hex; rebuildLetters(); },
+    setModel(url) { if (url && url !== state.model) loadModel(url); },
     capture() {
       renderer.render(scene, camera);
       return canvas.toDataURL("image/png");
