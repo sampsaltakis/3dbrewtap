@@ -229,6 +229,8 @@ if (!canvas) {
   const applyBody = (gltf) => {
     clearGroup(bodyGroup);
     bodyMats = [];
+    gltf.scene.rotation.set(0, 0, 0);
+    if (/classic/i.test(state.model)) gltf.scene.rotation.y = Math.PI / 2;
     gltf.scene.traverse((obj) => {
       if (obj.isMesh) {
         obj.material = new THREE.MeshStandardMaterial({
