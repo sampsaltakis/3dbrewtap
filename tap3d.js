@@ -114,8 +114,7 @@ const shapesFromGlyph = (otPath) => {
   if (!contours.length) return [];
   const items = contours.map((pts) => ({
     pts,
-    area: Math.abs(THREE.ShapeUtils.area(pts)),
-    cw: THREE.ShapeUtils.isClockWise(pts)
+    area: Math.abs(THREE.ShapeUtils.area(pts))
   })).sort((a, b) => b.area - a.area);
   const used = new Set();
   const shapes = [];
@@ -139,8 +138,8 @@ const shapesFromGlyph = (otPath) => {
 const state = {
   text: "",
   style: "raised",
-  color: "#F4EFE4",
-  body: "#2C2C2C",
+  color: "#FFFFFF",
+  body: "#8A8A8A",
   size: 34,
   raise: 2,
   direction: "down",
