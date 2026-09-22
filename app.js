@@ -16,6 +16,7 @@ const printZone = document.getElementById("printZone");
 const preview = document.getElementById("preview");
 let letterColor = "#111111";
 let letterDir = "up";
+let handleShape = "narrow";
 const tap3 = () => window.tapPreview || {};
 const on = (id, ev, fn) => {
   const el = document.getElementById(id);
@@ -133,6 +134,10 @@ const postQuote = async (fields, file, statusEl) => {
 on("shapeChips", "click", (e) => {
   const btn = e.target.closest(".chip");
   if (!btn || btn.classList.contains("soon") || btn.disabled) return;
+  document.querySelectorAll("#shapeChips .chip").forEach((c) => c.classList.remove("on"));
+  btn.classList.add("on");
+  handleShape = btn.dataset.shape || "narrow";
+  if (tap3().setModel && btn.dataset.model) tap3().setModel(btn.dataset.model);
 });
 
 on("letterDir", "click", (e) => {
@@ -195,7 +200,7 @@ on("quoteForm", "submit", async (e) => {
       email,
       phone,
       notes: document.getElementById("notes").value.trim(),
-      shape: "narrow",
+      shape: handleShape,
       letterStyle: "raised",
       letterDir: letterDir === "up" ? "top to bottom" : "bottom to top",
       font: document.getElementById("fontSelect").value,
