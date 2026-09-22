@@ -115,7 +115,12 @@ h2 { font-size: clamp(28px, 4vw, 44px); letter-spacing: -.03em; margin-bottom: 1
 .shape-grid figure { background: var(--card); border-radius: 20px; padding: 22px 10px; text-align: center; }
 .shape-grid figure.soon { opacity: .38; filter: grayscale(1); }
 .sil { width: 54px; height: 130px; margin: 0 auto 12px; background: var(--grey); }
-.sil.classic { border-radius: 12px 12px 6px 6px; }
+.sil.classic {
+  width: 62px;
+  height: 130px;
+  border-radius: 10px 10px 4px 4px;
+  clip-path: polygon(6% 0, 94% 0, 70% 100%, 30% 100%);
+}
 .sil.modern { width: 38px; border-radius: 6px; }
 .sil.wide { width: 78px; height: 110px; border-radius: 10px; }
 .sil.sculpt { width: 64px; border-radius: 50% 50% 12px 12px; }
