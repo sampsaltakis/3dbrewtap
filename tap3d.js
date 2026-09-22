@@ -154,15 +154,17 @@ if (!canvas) {
   renderer.outputColorSpace = THREE.SRGBColorSpace;
 
   const scene = new THREE.Scene();
-  const camera = new THREE.PerspectiveCamera(35, 1, 1, 2000);
+  const camera = new THREE.PerspectiveCamera(32, 1, 1, 5000);
   const controls = new OrbitControls(camera, canvas);
   controls.enableDamping = true;
+  controls.minDistance = 160;
+  controls.maxDistance = 1200;
   controls.target.set(-18, 125, 0);
-  camera.position.set(210, 125, 90);
+  camera.position.set(420, 125, 0);
 
   scene.add(new THREE.AmbientLight(0xffffff, 0.85));
   const key = new THREE.DirectionalLight(0xffffff, 1.2);
-  key.position.set(220, 180, 120);
+  key.position.set(320, 180, 80);
   scene.add(key);
   const rim = new THREE.DirectionalLight(0xffffff, 0.55);
   rim.position.set(-80, 80, -160);
@@ -173,6 +175,24 @@ if (!canvas) {
   const letters = new THREE.Group();
   root.add(letters);
   let bodyMats = [];
+  let framed = false;
+
+  const frameTap = () => {
+    const box = new THREE.Box3().setFromObject(root);
+    if (box.isEmpty()) return;
+    const size = box.getSize(new THREE.Vector3());
+    const center = box.getCenter(new THREE.Vector3());
+    controls.target.copy(center);
+    const fov = (camera.fov * Math.PI) / 180;
+    const fitH = size.y * 0.62;
+    const dist = fitH / Math.tan(fov / 2);
+    camera.position.set(center.x + dist, center.y, center.z);
+    camera.near = Math.max(1, dist / 50);
+    camera.far = dist * 20;
+    camera.updateProjectionMatrix();
+    controls.update();
+    framed = true;
+  };
 
   const resize = () => {
     const parent = canvas.parentElement;
@@ -181,6 +201,7 @@ if (!canvas) {
     renderer.setSize(w, h, false);
     camera.aspect = w / h;
     camera.updateProjectionMatrix();
+    if (framed) frameTap();
   };
   resize();
   window.addEventListener("resize", resize);
@@ -201,6 +222,7 @@ if (!canvas) {
     root.add(gltf.scene);
     state.ready = true;
     resize();
+    frameTap();
     rebuildLetters();
   });
 
