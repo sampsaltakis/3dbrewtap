@@ -51,6 +51,21 @@ const fileToDataUrl = (file) => new Promise((resolve, reject) => {
   reader.readAsDataURL(file);
 });
 
+const shrinkShot = (dataUrl) => new Promise((resolve) => {
+  const img = new Image();
+  img.onload = () => {
+    const max = 720;
+    const scale = Math.min(1, max / Math.max(img.width, img.height, 1));
+    const c = document.createElement("canvas");
+    c.width = Math.max(1, Math.round(img.width * scale));
+    c.height = Math.max(1, Math.round(img.height * scale));
+    c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+    resolve(c.toDataURL("image/jpeg", 0.8));
+  };
+  img.onerror = () => resolve(dataUrl);
+  img.src = dataUrl;
+});
+
 const saveDropboxPayload = async (name, fileName, fileData) => {
   if (!fileData) return "";
   const res = await fetch("/api/dropbox", {
@@ -61,7 +76,7 @@ const saveDropboxPayload = async (name, fileName, fileData) => {
   const raw = await res.text();
   let data = {};
   try { data = JSON.parse(raw); } catch (e) { data = {}; }
-  if (!res.ok) throw new Error(data.error || "Could not save the file to Dropbox.");
+  if (!res.ok) throw new Error(data.error || data.detail || "Could not save the file to Dropbox.");
   return data.path || "";
 };
 
@@ -78,11 +93,16 @@ const postQuote = async (fields, file, statusEl) => {
     fields.dropboxPath = await saveToDropbox(file, fields.name);
   }
   if (fields.source === "Build your custom tap" && tap3().capture) {
-    const shot = tap3().capture();
-    if (shot && shot.indexOf("data:image") === 0) {
-      statusEl.textContent = "Saving preview image to Dropbox…";
-      const label = (fields.tapText || "tap").replace(/[^a-zA-Z0-9]+/g, "-").slice(0, 24) || "tap";
-      fields.dropboxPreview = await saveDropboxPayload(fields.name, label + "-preview.png", shot);
+    try {
+      const shot = tap3().capture();
+      if (shot && shot.indexOf("data:image") === 0) {
+        statusEl.textContent = "Saving preview image to Dropbox…";
+        const compact = await shrinkShot(shot);
+        const label = (fields.tapText || "tap").replace(/[^a-zA-Z0-9]+/g, "-").slice(0, 24) || "tap";
+        fields.dropboxPreview = await saveDropboxPayload(fields.name, label + "-preview.jpg", compact);
+      }
+    } catch (err) {
+      fields.dropboxPreviewError = err.message || "Preview upload failed";
     }
   }
   const fd = new FormData();
@@ -99,6 +119,10 @@ const postQuote = async (fields, file, statusEl) => {
   const data = await res.json().catch(() => ({}));
   if (!res.ok || data.success === "false" || data.success === false) {
     throw new Error(data.message || "Could not send the request.");
+  }
+  if (fields.dropboxPreviewError && !fields.dropboxPreview) {
+    statusEl.textContent = "Sent to orders@3dbrewtap.com. Preview was not saved: " + fields.dropboxPreviewError;
+    return;
   }
   const saved = [fields.dropboxPath && "logo", fields.dropboxPreview && "preview"].filter(Boolean);
   statusEl.textContent = saved.length
