@@ -51,19 +51,23 @@ const fileToDataUrl = (file) => new Promise((resolve, reject) => {
   reader.readAsDataURL(file);
 });
 
-const saveToDropbox = async (file, name) => {
-  if (!file) return "";
-  const fileData = await fileToDataUrl(file);
+const saveDropboxPayload = async (name, fileName, fileData) => {
+  if (!fileData) return "";
   const res = await fetch("/api/dropbox", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ name, fileName: file.name, fileData })
+    body: JSON.stringify({ name, fileName, fileData })
   });
   const raw = await res.text();
   let data = {};
   try { data = JSON.parse(raw); } catch (e) { data = {}; }
-  if (!res.ok) throw new Error(data.error || "Could not save the logo to Dropbox.");
+  if (!res.ok) throw new Error(data.error || "Could not save the file to Dropbox.");
   return data.path || "";
+};
+
+const saveToDropbox = async (file, name) => {
+  if (!file) return "";
+  return saveDropboxPayload(name, file.name, await fileToDataUrl(file));
 };
 
 const postQuote = async (fields, file, statusEl) => {
@@ -72,6 +76,14 @@ const postQuote = async (fields, file, statusEl) => {
   if (file) {
     statusEl.textContent = "Saving logo to Dropbox…";
     fields.dropboxPath = await saveToDropbox(file, fields.name);
+  }
+  if (fields.source === "Build your custom tap" && tap3().capture) {
+    const shot = tap3().capture();
+    if (shot && shot.indexOf("data:image") === 0) {
+      statusEl.textContent = "Saving preview image to Dropbox…";
+      const label = (fields.tapText || "tap").replace(/[^a-zA-Z0-9]+/g, "-").slice(0, 24) || "tap";
+      fields.dropboxPreview = await saveDropboxPayload(fields.name, label + "-preview.png", shot);
+    }
   }
   const fd = new FormData();
   fd.append("_subject", "New tap request from " + fields.name);
@@ -88,8 +100,9 @@ const postQuote = async (fields, file, statusEl) => {
   if (!res.ok || data.success === "false" || data.success === false) {
     throw new Error(data.message || "Could not send the request.");
   }
-  statusEl.textContent = fields.dropboxPath
-    ? "Sent to orders@3dbrewtap.com. Logo saved in Dropbox."
+  const saved = [fields.dropboxPath && "logo", fields.dropboxPreview && "preview"].filter(Boolean);
+  statusEl.textContent = saved.length
+    ? "Sent to orders@3dbrewtap.com. Saved to Dropbox: " + saved.join(" and ") + "."
     : "Sent to orders@3dbrewtap.com.";
 };
 
