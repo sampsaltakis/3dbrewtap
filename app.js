@@ -15,7 +15,7 @@ const status = document.getElementById("status");
 const printZone = document.getElementById("printZone");
 const preview = document.getElementById("preview");
 let letterColor = "#111111";
-let letterDir = "down";
+let letterDir = "up";
 const tap3 = () => window.tapPreview || {};
 const on = (id, ev, fn) => {
   const el = document.getElementById(id);
@@ -197,7 +197,7 @@ on("quoteForm", "submit", async (e) => {
       notes: document.getElementById("notes").value.trim(),
       shape: "narrow",
       letterStyle: "raised",
-      letterDir: letterDir === "up" ? "bottom to top" : "top to bottom",
+      letterDir: letterDir === "up" ? "top to bottom" : "bottom to top",
       font: document.getElementById("fontSelect").value,
       letterRaise: raiseMm() + " mm",
       qty: document.getElementById("qty").value,
