@@ -192,13 +192,26 @@
               <img id="logoPreview" alt="" hidden />
             </label>
             <input id="logoFile" type="file" accept="image/*,.svg" />
-            <div class="chips" style="margin-top:10px">
-              <button type="button" class="chip" id="tryVoltage">Try Voltage logo</button>
-              <button type="button" class="chip" id="clearLogo" hidden>Remove upload</button>
+            <button type="button" class="chip" id="clearLogo" hidden style="margin-top:10px">Remove upload</button>
+            <div id="logoTools" hidden>
+              <label>Logo color</label>
+              <div class="swatches" id="logoColors">
+                <button type="button" class="swatch on" data-color="#111111" style="background:#111111" aria-label="Black"></button>
+                <button type="button" class="swatch" data-color="#FFFFFF" style="background:#FFFFFF" aria-label="White"></button>
+                <button type="button" class="swatch" data-color="#F4F1EC" style="background:#F4F1EC" aria-label="Cream"></button>
+                <button type="button" class="swatch" data-color="#FF5A1F" style="background:#FF5A1F" aria-label="Orange"></button>
+                <button type="button" class="swatch" data-color="#2E7D4F" style="background:#2E7D4F" aria-label="Green"></button>
+                <button type="button" class="swatch" data-color="#6B1C28" style="background:#6B1C28" aria-label="Maroon"></button>
+                <button type="button" class="swatch" data-color="#1A2744" style="background:#1A2744" aria-label="Navy"></button>
+                <button type="button" class="swatch" data-color="#2C2C2C" style="background:#2C2C2C" aria-label="Charcoal"></button>
+                <button type="button" class="swatch" data-color="#8A8A8A" style="background:#8A8A8A" aria-label="Grey"></button>
+              </div>
+              <label>Height off tap <span id="logoRaiseVal">2.0 mm</span></label>
+              <input id="logoRaise" type="range" min="10" max="60" step="5" value="20" />
             </div>
             <div class="place-card" id="logoPlace" hidden>
               <h3>Size & Placement</h3>
-              <p class="hint">Scale, move, spin, or flip the artwork on the handle.</p>
+              <p class="hint">Scale, move, or spin the artwork on the handle.</p>
               <label>Size <span id="logoSizeVal">100%</span></label>
               <input id="logoSize" type="range" min="40" max="180" value="100" />
               <label>Up / down <span id="logoYVal">0</span></label>
@@ -207,10 +220,7 @@
               <input id="logoZ" type="range" min="-40" max="40" value="0" />
               <label>Rotate <span id="logoRotVal">0°</span></label>
               <input id="logoRot" type="range" min="-180" max="180" value="0" />
-              <div class="chips">
-                <button type="button" class="chip" id="logoFlip">Flip</button>
-                <button type="button" class="chip" id="logoReset">Reset placement</button>
-              </div>
+              <button type="button" class="chip" id="logoReset">Reset placement</button>
             </div>
           </div>
           <label class="check-row"><input id="printArea" type="checkbox" /> Show print area</label>
