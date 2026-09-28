@@ -85,7 +85,7 @@
         <label for="logoPhone">Phone</label>
         <input id="logoPhone" name="phone" type="tel" required placeholder="(555) 555-5555" />
         <label for="logoUpload">Logo or image</label>
-        <input id="logoUpload" name="logo" type="file" accept="image/*" required />
+        <input id="logoUpload" name="logo" type="file" accept="image/*,.svg" required />
         <label for="logoNotes">Notes</label>
         <textarea id="logoNotes" name="notes" rows="3" placeholder="Beer name, colors, quantity…"></textarea>
         <button class="btn submit" type="submit">Send to our designers</button>
@@ -113,7 +113,7 @@
             <div class="print-zone" id="printZone"></div>
             <div class="art none" id="art"></div>
           </div>
-          <p class="hint">Type a name, pick a typeface, or upload a logo, then drag the handle.</p>
+          <p class="hint">Type a name or upload a logo, then use Size & Placement.</p>
         </div>
         <form class="panel" id="quoteForm">
           <label>Handle shape</label>
@@ -173,6 +173,17 @@
             <input id="size" type="range" min="18" max="64" value="34" />
             <label>Height off tap <span id="raiseVal">2.0 mm</span></label>
             <input id="raise" type="range" min="10" max="60" step="5" value="20" />
+            <div class="place-card" id="textPlace" hidden>
+              <h3>Size & Placement</h3>
+              <p class="hint">Slide the text on the handle. Reset anytime.</p>
+              <label>Up / down <span id="textYVal">0</span></label>
+              <input id="textY" type="range" min="-80" max="80" value="0" />
+              <label>Left / right <span id="textZVal">0</span></label>
+              <input id="textZ" type="range" min="-40" max="40" value="0" />
+              <label>Rotate <span id="textRotVal">0°</span></label>
+              <input id="textRot" type="range" min="-180" max="180" value="0" />
+              <button type="button" class="chip" id="textReset">Reset placement</button>
+            </div>
           </div>
           <div id="uploadPanel" hidden>
             <label class="dropzone" id="dropzone" for="logoFile">
@@ -180,8 +191,27 @@
               <span>Drop a logo or image here, or tap to browse. PNG or SVG works best.</span>
               <img id="logoPreview" alt="" hidden />
             </label>
-            <input id="logoFile" type="file" accept="image/*" />
-            <button type="button" class="chip" id="clearLogo" hidden>Remove upload</button>
+            <input id="logoFile" type="file" accept="image/*,.svg" />
+            <div class="chips" style="margin-top:10px">
+              <button type="button" class="chip" id="tryVoltage">Try Voltage logo</button>
+              <button type="button" class="chip" id="clearLogo" hidden>Remove upload</button>
+            </div>
+            <div class="place-card" id="logoPlace" hidden>
+              <h3>Size & Placement</h3>
+              <p class="hint">Scale, move, spin, or flip the artwork on the handle.</p>
+              <label>Size <span id="logoSizeVal">100%</span></label>
+              <input id="logoSize" type="range" min="40" max="180" value="100" />
+              <label>Up / down <span id="logoYVal">0</span></label>
+              <input id="logoY" type="range" min="-80" max="80" value="0" />
+              <label>Left / right <span id="logoZVal">0</span></label>
+              <input id="logoZ" type="range" min="-40" max="40" value="0" />
+              <label>Rotate <span id="logoRotVal">0°</span></label>
+              <input id="logoRot" type="range" min="-180" max="180" value="0" />
+              <div class="chips">
+                <button type="button" class="chip" id="logoFlip">Flip</button>
+                <button type="button" class="chip" id="logoReset">Reset placement</button>
+              </div>
+            </div>
           </div>
           <label class="check-row"><input id="printArea" type="checkbox" /> Show print area</label>
           <label for="qty">Quantity</label>
