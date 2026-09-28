@@ -74,22 +74,41 @@ const shapesFromGlyph = (otPath) => {
   });
   return shapes;
 };
-const imageSize = (url) => new Promise((resolve) => {
+const loadTintedLogo = (url) => new Promise((resolve) => {
   const img = new Image();
-  img.onload = () => resolve({ w: img.naturalWidth || 1, h: img.naturalHeight || 1 });
-  img.onerror = () => resolve({ w: 1, h: 1 });
+  img.crossOrigin = "anonymous";
+  img.onload = () => {
+    const w = img.naturalWidth || 1;
+    const h = img.naturalHeight || 1;
+    const c = document.createElement("canvas");
+    c.width = w; c.height = h;
+    const ctx = c.getContext("2d");
+    ctx.drawImage(img, 0, 0);
+    const data = ctx.getImageData(0, 0, w, h);
+    const px = data.data;
+    for (let i = 0; i < px.length; i += 4) {
+      const a = px[i + 3] / 255;
+      const lum = (px[i] + px[i + 1] + px[i + 2]) / 765;
+      const ink = a * (1 - lum * 0.92);
+      px[i] = 255; px[i + 1] = 255; px[i + 2] = 255; px[i + 3] = Math.round(ink * 255);
+    }
+    ctx.putImageData(data, 0, 0);
+    resolve({ url: c.toDataURL("image/png"), w, h });
+  };
+  img.onerror = () => resolve({ url, w: 1, h: 1 });
   img.src = url;
 });
 
 const state = {
   text: "", style: "raised", color: "#111111", body: "#8A8A8A", size: 34, raise: 2, direction: "up",
   fontName: "anton", model: "models/Tap-Narrow.glb", logo: "", ready: false,
-  textY: 0, textZ: 0, textRot: 0, logoScale: 1, logoY: 0, logoZ: 0, logoRot: 0, logoFlip: 1, logoRaise: 2.4
+  textY: 0, textZ: 0, textRot: 0, logoScale: 1, logoY: 0, logoZ: 0, logoRot: 0, logoFlip: 1,
+  logoRaise: 2, logoColor: "#111111"
 };
 
 const canvas = document.getElementById("tapCanvas");
 if (!canvas) {
-  window.tapPreview = { setColor() {}, setText() {}, setFont() {}, setRaise() {}, setSize() {}, setDirection() {}, setStyle() {}, setLetterColor() {}, setModel() {}, setLogo() {}, setTextPlace() {}, setLogoPlace() {}, capture() { return ""; } };
+  window.tapPreview = { setColor() {}, setText() {}, setFont() {}, setRaise() {}, setSize() {}, setDirection() {}, setStyle() {}, setLetterColor() {}, setModel() {}, setLogo() {}, setTextPlace() {}, setLogoPlace() {}, setLogoColor() {}, capture() { return ""; } };
 } else {
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false, preserveDrawingBuffer: true });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
@@ -143,42 +162,37 @@ if (!canvas) {
     const token = ++logoToken;
     clearGroup(artGroup);
     if (!state.logo) return;
-    const dim = await imageSize(state.logo);
+    const tinted = await loadTintedLogo(state.logo);
     if (token !== logoToken) return;
-    const tex = new THREE.TextureLoader().load(state.logo);
+    const tex = new THREE.TextureLoader().load(tinted.url);
     tex.colorSpace = THREE.SRGBColorSpace;
     tex.anisotropy = 8;
-    const aspect = Math.max(0.2, (dim.w || 1) / (dim.h || 1));
-    const maxH = Math.max(36, (bodyBox.max.y - bodyBox.min.y) * 0.5);
-    const maxW = Math.max(16, (bodyBox.max.z - bodyBox.min.z) * 0.88);
+    const aspect = Math.max(0.2, (tinted.w || 1) / (tinted.h || 1));
+    const maxH = Math.max(36, (bodyBox.max.y - bodyBox.min.y) * 0.48);
+    const maxW = Math.max(16, (bodyBox.max.z - bodyBox.min.z) * 0.86);
     let h = maxH;
     let w = h * aspect;
     if (w > maxW) { w = maxW; h = w / aspect; }
     const scale = state.logoScale || 1;
     h *= scale; w *= scale;
-    const depth = Math.max(1.2, state.logoRaise || 2.4);
-    const plate = new THREE.Shape();
-    plate.moveTo(-h / 2, -w / 2);
-    plate.lineTo(h / 2, -w / 2);
-    plate.lineTo(h / 2, w / 2);
-    plate.lineTo(-h / 2, w / 2);
-    plate.closePath();
-    const body = new THREE.Mesh(
-      new THREE.ExtrudeGeometry(plate, { depth, steps: 1, bevelEnabled: false }),
-      new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.45, metalness: 0.04 })
-    );
-    const face = new THREE.Mesh(
+    const depth = Math.max(0.8, state.logoRaise || 2);
+    const mesh = new THREE.Mesh(
       new THREE.PlaneGeometry(h, w),
-      new THREE.MeshStandardMaterial({ map: tex, transparent: true, roughness: 0.35, metalness: 0.02, side: THREE.FrontSide })
+      new THREE.MeshStandardMaterial({
+        map: tex,
+        color: new THREE.Color(state.logoColor || "#111111"),
+        transparent: true,
+        roughness: 0.32,
+        metalness: 0.04,
+        side: THREE.DoubleSide,
+        depthWrite: false
+      })
     );
-    face.position.z = depth + 0.05;
-    const group = new THREE.Group();
-    group.add(body);
-    group.add(face);
-    group.quaternion.setFromRotationMatrix(faceBasis(1, -1));
-    group.rotateZ(THREE.MathUtils.degToRad(state.logoRot || 0));
-    group.position.set((Number.isFinite(bodyBox.max.x) ? bodyBox.max.x : 0) + 0.4, (bodyBox.min.y + bodyBox.max.y) / 2 + (state.logoY || 0), state.logoZ || 0);
-    artGroup.add(group);
+    const along = 1;
+    mesh.quaternion.setFromRotationMatrix(faceBasis(along, -along));
+    mesh.rotateZ(THREE.MathUtils.degToRad(state.logoRot || 0));
+    mesh.position.set((Number.isFinite(bodyBox.max.x) ? bodyBox.max.x : 0) + depth, (bodyBox.min.y + bodyBox.max.y) / 2 + (state.logoY || 0), state.logoZ || 0);
+    artGroup.add(mesh);
   };
   const applyBody = (gltf) => {
     clearGroup(bodyGroup); bodyMats = [];
@@ -229,6 +243,7 @@ if (!canvas) {
     setLetterColor(hex) { state.color = hex; rebuildLetters(); },
     setModel(url) { if (url && url !== state.model) loadModel(url); },
     setLogo(url) { state.logo = url || ""; placeLogo(); },
+    setLogoColor(hex) { state.logoColor = hex || "#111111"; placeLogo(); },
     setTextPlace(y, z, rot) { state.textY = Number(y) || 0; state.textZ = Number(z) || 0; state.textRot = Number(rot) || 0; rebuildLetters(); },
     setLogoPlace(opts) {
       const o = opts || {};
@@ -237,7 +252,7 @@ if (!canvas) {
       if (o.z != null) state.logoZ = Number(o.z) || 0;
       if (o.rot != null) state.logoRot = Number(o.rot) || 0;
       if (o.flip != null) state.logoFlip = Number(o.flip) || 1;
-      if (o.raise != null) state.logoRaise = Number(o.raise) || 2.4;
+      if (o.raise != null) state.logoRaise = Number(o.raise) || 2;
       placeLogo();
     },
     capture() { renderer.render(scene, camera); return canvas.toDataURL("image/png"); }
