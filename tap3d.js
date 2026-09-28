@@ -140,12 +140,13 @@ const state = {
   direction: "up",
   fontName: "anton",
   model: "models/Tap-Narrow.glb",
+  logo: "",
   ready: false
 };
 
 const canvas = document.getElementById("tapCanvas");
 if (!canvas) {
-  window.tapPreview = { setColor() {}, setText() {}, setFont() {}, setRaise() {}, setSize() {}, setDirection() {}, setStyle() {}, setLetterColor() {}, setModel() {}, capture() { return ""; } };
+  window.tapPreview = { setColor() {}, setText() {}, setFont() {}, setRaise() {}, setSize() {}, setDirection() {}, setStyle() {}, setLetterColor() {}, setModel() {}, setLogo() {}, capture() { return ""; } };
 } else {
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false, preserveDrawingBuffer: true });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
@@ -173,8 +174,10 @@ if (!canvas) {
   scene.add(root);
   const bodyGroup = new THREE.Group();
   const letters = new THREE.Group();
+  const artGroup = new THREE.Group();
   root.add(bodyGroup);
   root.add(letters);
+  root.add(artGroup);
   let bodyMats = [];
   let bodyBox = new THREE.Box3(new THREE.Vector3(-20, 0, -20), new THREE.Vector3(0, 250, 20));
   let framed = false;
@@ -224,6 +227,26 @@ if (!canvas) {
     }
   };
 
+  const placeLogo = () => {
+    clearGroup(artGroup);
+    if (!state.logo) return;
+    const tex = new THREE.TextureLoader().load(state.logo);
+    tex.colorSpace = THREE.SRGBColorSpace;
+    const tall = Math.max(40, (bodyBox.max.y - bodyBox.min.y) * 0.42);
+    const wide = Math.max(18, (bodyBox.max.z - bodyBox.min.z) * 0.72);
+    const mesh = new THREE.Mesh(
+      new THREE.PlaneGeometry(tall, wide),
+      new THREE.MeshBasicMaterial({ map: tex, transparent: true, side: THREE.DoubleSide })
+    );
+    mesh.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(
+      new THREE.Vector3(0, 1, 0),
+      new THREE.Vector3(0, 0, 1),
+      new THREE.Vector3(1, 0, 0)
+    ));
+    mesh.position.set((Number.isFinite(bodyBox.max.x) ? bodyBox.max.x : 0) + 0.9, (bodyBox.min.y + bodyBox.max.y) / 2, 0);
+    artGroup.add(mesh);
+  };
+
   const applyBody = (gltf) => {
     clearGroup(bodyGroup);
     bodyMats = [];
@@ -245,6 +268,7 @@ if (!canvas) {
     resize();
     frameTap();
     rebuildLetters();
+    placeLogo();
   };
 
   const loadModel = (url) => {
@@ -312,6 +336,7 @@ if (!canvas) {
     setStyle(style) { state.style = style || "raised"; rebuildLetters(); },
     setLetterColor(hex) { state.color = hex; rebuildLetters(); },
     setModel(url) { if (url && url !== state.model) loadModel(url); },
+    setLogo(url) { state.logo = url || ""; placeLogo(); },
     capture() {
       renderer.render(scene, camera);
       return canvas.toDataURL("image/png");
