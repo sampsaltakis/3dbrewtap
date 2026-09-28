@@ -13,14 +13,18 @@ if (heroTitle) heroTitle.innerHTML = headlines[Math.floor(Math.random() * headli
 const handle = document.getElementById("handle");
 const status = document.getElementById("status");
 const printZone = document.getElementById("printZone");
-const preview = document.getElementById("preview");
 let letterColor = "#111111";
 let letterDir = "up";
 let handleShape = "narrow";
+let logoFlip = 1;
 const tap3 = () => window.tapPreview || {};
 const on = (id, ev, fn) => {
   const el = document.getElementById(id);
   if (el) el.addEventListener(ev, fn);
+};
+const val = (id, fallback) => {
+  const el = document.getElementById(id);
+  return el ? Number(el.value) : fallback;
 };
 
 const markSwatch = (root, btn) => {
@@ -37,12 +41,44 @@ const applyRaise = () => {
   if (tap3().setRaise) tap3().setRaise(mm);
 };
 
+const applyTextPlace = () => {
+  const y = val("textY", 0);
+  const z = val("textZ", 0);
+  const rot = val("textRot", 0);
+  const yEl = document.getElementById("textYVal");
+  const zEl = document.getElementById("textZVal");
+  const rEl = document.getElementById("textRotVal");
+  if (yEl) yEl.textContent = y;
+  if (zEl) zEl.textContent = z;
+  if (rEl) rEl.textContent = rot + "\u00b0";
+  if (tap3().setTextPlace) tap3().setTextPlace(y, z, rot);
+};
+
+const applyLogoPlace = () => {
+  const scale = val("logoSize", 100) / 100;
+  const y = val("logoY", 0);
+  const z = val("logoZ", 0);
+  const rot = val("logoRot", 0);
+  const sEl = document.getElementById("logoSizeVal");
+  const yEl = document.getElementById("logoYVal");
+  const zEl = document.getElementById("logoZVal");
+  const rEl = document.getElementById("logoRotVal");
+  if (sEl) sEl.textContent = Math.round(scale * 100) + "%";
+  if (yEl) yEl.textContent = y;
+  if (zEl) zEl.textContent = z;
+  if (rEl) rEl.textContent = rot + "\u00b0";
+  if (tap3().setLogoPlace) tap3().setLogoPlace({ scale, y, z, rot, flip: logoFlip });
+};
+
 const renderLetters = () => {
   const raw = ((document.getElementById("tapText") || {}).value || "").trim();
   if (tap3().setStyle) tap3().setStyle("raised");
   if (tap3().setText) tap3().setText(raw);
   if (tap3().setLetterColor) tap3().setLetterColor(letterColor);
   if (tap3().setDirection) tap3().setDirection(letterDir);
+  applyTextPlace();
+  const box = document.getElementById("textPlace");
+  if (box) box.hidden = !raw;
 };
 
 const showMode = (mode) => {
@@ -74,32 +110,45 @@ const fileToDataUrl = (file) => new Promise((resolve, reject) => {
   reader.readAsDataURL(file);
 });
 
+const showLogoUi = (url) => {
+  const thumb = document.getElementById("logoPreview");
+  const clear = document.getElementById("clearLogo");
+  const place = document.getElementById("logoPlace");
+  if (thumb) { thumb.src = url; thumb.hidden = !url; }
+  if (clear) clear.hidden = !url;
+  if (place) place.hidden = !url;
+  if (printZone) printZone.classList.toggle("on", !!url);
+};
+
 const applyLogoFile = async (file) => {
   if (!file) return;
   const url = await fileToDataUrl(file);
-  const thumb = document.getElementById("logoPreview");
-  const clear = document.getElementById("clearLogo");
-  if (thumb) { thumb.src = url; thumb.hidden = false; }
-  if (clear) clear.hidden = false;
   if (tap3().setLogo) tap3().setLogo(url);
+  showLogoUi(url);
+  applyLogoPlace();
 };
 
 const clearLogo = () => {
   const input = document.getElementById("logoFile");
-  const thumb = document.getElementById("logoPreview");
-  const clear = document.getElementById("clearLogo");
   if (input) input.value = "";
-  if (thumb) { thumb.removeAttribute("src"); thumb.hidden = true; }
-  if (clear) clear.hidden = true;
   if (tap3().setLogo) tap3().setLogo("");
+  showLogoUi("");
 };
 
 on("logoFile", "change", (e) => applyLogoFile(e.target.files && e.target.files[0]));
 on("clearLogo", "click", clearLogo);
+on("tryVoltage", "click", () => {
+  const url = "images/voltage.svg";
+  if (tap3().setLogo) tap3().setLogo(url);
+  showLogoUi(url);
+  applyLogoPlace();
+  showMode("upload");
+});
+
 const dropzone = document.getElementById("dropzone");
 if (dropzone) {
-  ["dragenter", "dragover"].forEach((ev) => dropzone.addEventListener(ev, (e) => { e.preventDefault(); dropzone.classList.add("on"); }));
-  ["dragleave", "drop"].forEach((ev) => dropzone.addEventListener(ev, (e) => { e.preventDefault(); dropzone.classList.remove("on"); }));
+  ["dragenter", "dragover"].forEach((ev) => dropzone.addEventListener(ev, (e) => { e.preventDefault(); }));
+  ["dragleave", "drop"].forEach((ev) => dropzone.addEventListener(ev, (e) => { e.preventDefault(); }));
   dropzone.addEventListener("drop", (e) => {
     const file = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
     if (!file) return;
@@ -112,6 +161,20 @@ if (dropzone) {
     applyLogoFile(file);
   });
 }
+
+["textY", "textZ", "textRot"].forEach((id) => on(id, "input", applyTextPlace));
+["logoSize", "logoY", "logoZ", "logoRot"].forEach((id) => on(id, "input", applyLogoPlace));
+on("logoFlip", "click", () => { logoFlip *= -1; applyLogoPlace(); });
+on("textReset", "click", () => {
+  ["textY", "textZ", "textRot"].forEach((id) => { const el = document.getElementById(id); if (el) el.value = 0; });
+  applyTextPlace();
+});
+on("logoReset", "click", () => {
+  const defaults = { logoSize: 100, logoY: 0, logoZ: 0, logoRot: 0 };
+  Object.keys(defaults).forEach((id) => { const el = document.getElementById(id); if (el) el.value = defaults[id]; });
+  logoFlip = 1;
+  applyLogoPlace();
+});
 
 const shrinkShot = (dataUrl) => new Promise((resolve) => {
   const img = new Image();
@@ -148,17 +211,13 @@ const saveToDropbox = async (file, name) => {
 };
 
 const postQuote = async (fields, file, statusEl) => {
-  statusEl.textContent = "Sending…";
+  statusEl.textContent = "Sending\u2026";
   if (file && file.size > 5000000) throw new Error("Logo is too large. Use a file under 5 MB.");
-  if (file) {
-    statusEl.textContent = "Sending…";
-    fields.dropboxPath = await saveToDropbox(file, fields.name);
-  }
+  if (file) fields.dropboxPath = await saveToDropbox(file, fields.name);
   if (fields.source === "Build your custom tap" && tap3().capture) {
     try {
       const shot = tap3().capture();
       if (shot && shot.indexOf("data:image") === 0) {
-        statusEl.textContent = "Sending…";
         const compact = await shrinkShot(shot);
         const label = (fields.tapText || "tap").replace(/[^a-zA-Z0-9]+/g, "-").slice(0, 24) || "tap";
         fields.dropboxPreview = await saveDropboxPayload(fields.name, label + "-preview.jpg", compact);
@@ -224,13 +283,11 @@ on("printArea", "change", (e) => {
 });
 
 on("tapText", "input", renderLetters);
-
 on("size", "input", (e) => {
   document.getElementById("sizeVal").textContent = e.target.value;
   if (tap3().setSize) tap3().setSize(e.target.value);
 });
 on("raise", "input", applyRaise);
-
 setTimeout(renderLetters, 800);
 applyRaise();
 
@@ -246,9 +303,7 @@ on("quoteForm", "submit", async (e) => {
   try {
     await postQuote({
       source: "Build your custom tap",
-      name,
-      email,
-      phone,
+      name, email, phone,
       notes: document.getElementById("notes").value.trim(),
       shape: handleShape,
       letterStyle: "raised",
@@ -256,7 +311,9 @@ on("quoteForm", "submit", async (e) => {
       font: (document.getElementById("fontSelect") || {}).value || "anton",
       letterRaise: raiseMm() + " mm",
       qty: document.getElementById("qty").value,
-      tapText: document.getElementById("tapText").value.trim()
+      tapText: document.getElementById("tapText").value.trim(),
+      textPlace: [val("textY", 0), val("textZ", 0), val("textRot", 0)].join(","),
+      logoPlace: [val("logoSize", 100), val("logoY", 0), val("logoZ", 0), val("logoRot", 0), logoFlip].join(",")
     }, (document.getElementById("logoFile") || {}).files && document.getElementById("logoFile").files[0], status);
   } catch (err) {
     status.textContent = err.message;
@@ -287,7 +344,6 @@ const galleryImgs = [...document.querySelectorAll(".gallery .shot img")];
 let current = 0;
 let touchX = 0;
 let touchY = 0;
-
 const showAt = (i) => {
   current = (i + galleryImgs.length) % galleryImgs.length;
   const img = galleryImgs[current];
@@ -307,7 +363,6 @@ const closeLightbox = () => {
   lightbox.setAttribute("aria-hidden", "true");
   document.body.style.overflow = "";
 };
-
 document.querySelector(".gallery").addEventListener("click", (e) => {
   const img = e.target.closest(".shot img");
   if (!img) return;
