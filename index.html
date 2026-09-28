@@ -113,7 +113,7 @@
             <div class="print-zone" id="printZone"></div>
             <div class="art none" id="art"></div>
           </div>
-          <p class="hint">Type a name, pick a typeface, then drag the handle.</p>
+          <p class="hint">Type a name, pick a typeface, or upload a logo, then drag the handle.</p>
         </div>
         <form class="panel" id="quoteForm">
           <label>Handle shape</label>
@@ -135,46 +135,55 @@
             <button type="button" class="swatch" data-color="#F4F1EC" style="background:#F4F1EC" aria-label="Cream"></button>
             <button type="button" class="swatch" data-color="#FFFFFF" style="background:#FFFFFF" aria-label="White"></button>
           </div>
-          <label>Read direction</label>
-          <div class="chips" id="letterDir">
-            <button type="button" class="chip" data-dir="down">Bottom to top</button>
-            <button type="button" class="chip on" data-dir="up">Top to bottom</button>
+          <label>Customize</label>
+          <div class="mode-btns">
+            <button type="button" class="mode-btn on" id="modeText"><span class="mode-ico">Tt</span> Text</button>
+            <button type="button" class="mode-btn" id="modeUpload"><span class="mode-ico">↑</span> Upload</button>
           </div>
-          <label>Letter color</label>
-          <div class="swatches" id="artColors">
-            <button type="button" class="swatch on" data-color="#111111" data-ink="#111111" style="background:#111111" aria-label="Black"></button>
-            <button type="button" class="swatch" data-color="#FFFFFF" data-ink="#FFFFFF" style="background:#FFFFFF" aria-label="White"></button>
-            <button type="button" class="swatch" data-color="#F4F1EC" data-ink="#F4F1EC" style="background:#F4F1EC" aria-label="Cream"></button>
-            <button type="button" class="swatch" data-color="#FF5A1F" data-ink="#FF5A1F" style="background:#FF5A1F" aria-label="Orange"></button>
-            <button type="button" class="swatch" data-color="#2E7D4F" data-ink="#2E7D4F" style="background:#2E7D4F" aria-label="Green"></button>
-            <button type="button" class="swatch" data-color="#6B1C28" data-ink="#6B1C28" style="background:#6B1C28" aria-label="Maroon"></button>
-            <button type="button" class="swatch" data-color="#1A2744" data-ink="#1A2744" style="background:#1A2744" aria-label="Navy"></button>
-            <button type="button" class="swatch" data-color="#2C2C2C" data-ink="#2C2C2C" style="background:#2C2C2C" aria-label="Charcoal"></button>
-            <button type="button" class="swatch" data-color="#8A8A8A" data-ink="#8A8A8A" style="background:#8A8A8A" aria-label="Grey"></button>
+          <div id="textPanel">
+            <label for="tapText">Your custom text</label>
+            <input id="tapText" type="text" maxlength="24" placeholder="Type something" />
+            <label>Pick a font</label>
+            <div class="font-tiles" id="fontTiles">
+              <button type="button" class="font-tile on" data-font="anton" style="font-family:Anton,sans-serif"><b>Aa</b><span>Anton</span></button>
+              <button type="button" class="font-tile" data-font="bungee" style="font-family:Bungee,sans-serif"><b>Aa</b><span>Bungee</span></button>
+              <button type="button" class="font-tile" data-font="archivo-black" style="font-family:'Archivo Black',sans-serif"><b>Aa</b><span>Archivo</span></button>
+              <button type="button" class="font-tile" data-font="fredoka" style="font-family:Fredoka,sans-serif"><b>Aa</b><span>Fredoka</span></button>
+              <button type="button" class="font-tile" data-font="outfit" style="font-family:Outfit,sans-serif"><b>Aa</b><span>Outfit</span></button>
+            </div>
+            <input id="fontSelect" type="hidden" value="anton" />
+            <label>Read direction</label>
+            <div class="chips" id="letterDir">
+              <button type="button" class="chip" data-dir="down">Bottom to top</button>
+              <button type="button" class="chip on" data-dir="up">Top to bottom</button>
+            </div>
+            <label>Letter color</label>
+            <div class="swatches" id="artColors">
+              <button type="button" class="swatch on" data-color="#111111" data-ink="#111111" style="background:#111111" aria-label="Black"></button>
+              <button type="button" class="swatch" data-color="#FFFFFF" data-ink="#FFFFFF" style="background:#FFFFFF" aria-label="White"></button>
+              <button type="button" class="swatch" data-color="#F4F1EC" data-ink="#F4F1EC" style="background:#F4F1EC" aria-label="Cream"></button>
+              <button type="button" class="swatch" data-color="#FF5A1F" data-ink="#FF5A1F" style="background:#FF5A1F" aria-label="Orange"></button>
+              <button type="button" class="swatch" data-color="#2E7D4F" data-ink="#2E7D4F" style="background:#2E7D4F" aria-label="Green"></button>
+              <button type="button" class="swatch" data-color="#6B1C28" data-ink="#6B1C28" style="background:#6B1C28" aria-label="Maroon"></button>
+              <button type="button" class="swatch" data-color="#1A2744" data-ink="#1A2744" style="background:#1A2744" aria-label="Navy"></button>
+              <button type="button" class="swatch" data-color="#2C2C2C" data-ink="#2C2C2C" style="background:#2C2C2C" aria-label="Charcoal"></button>
+              <button type="button" class="swatch" data-color="#8A8A8A" data-ink="#8A8A8A" style="background:#8A8A8A" aria-label="Grey"></button>
+            </div>
+            <label>Letter size <span id="sizeVal">34</span></label>
+            <input id="size" type="range" min="18" max="64" value="34" />
+            <label>Height off tap <span id="raiseVal">2.0 mm</span></label>
+            <input id="raise" type="range" min="10" max="60" step="5" value="20" />
+          </div>
+          <div id="uploadPanel" hidden>
+            <label class="dropzone" id="dropzone" for="logoFile">
+              <strong>Upload artwork</strong>
+              <span>Drop a logo or image here, or tap to browse. PNG or SVG works best.</span>
+              <img id="logoPreview" alt="" hidden />
+            </label>
+            <input id="logoFile" type="file" accept="image/*" />
+            <button type="button" class="chip" id="clearLogo" hidden>Remove upload</button>
           </div>
           <label class="check-row"><input id="printArea" type="checkbox" /> Show print area</label>
-          <label for="logoFile">Logo or image</label>
-          <input id="logoFile" type="file" accept="image/*" />
-          <label for="tapText">Text on handle</label>
-          <input id="tapText" type="text" maxlength="24" />
-          <label for="fontSelect">Typeface</label>
-          <select id="fontSelect"></select>
-          <button type="button" class="chip font-toggle" id="toggleFonts">Manage typefaces</button>
-          <div class="font-manager" id="fontManager" hidden>
-            <p class="hint">Remove a face, upload a .ttf/.otf, or add a stock face. Uploaded files stay on this computer.</p>
-            <ul class="font-list" id="fontList"></ul>
-            <label for="fontFile">Upload font file</label>
-            <input id="fontFile" type="file" accept=".ttf,.otf,font/ttf,font/otf" />
-            <label for="stockFont">Add a stock face</label>
-            <div class="font-add-row">
-              <select id="stockFont"></select>
-              <button type="button" class="chip" id="addStockFont">Add</button>
-            </div>
-          </div>
-          <label>Letter size <span id="sizeVal">34</span></label>
-          <input id="size" type="range" min="18" max="64" value="34" />
-          <label>Height off tap <span id="raiseVal">2.0 mm</span></label>
-          <input id="raise" type="range" min="10" max="60" step="5" value="20" />
           <label for="qty">Quantity</label>
           <input id="qty" type="number" min="1" value="1" />
           <label for="custName">Name</label>
