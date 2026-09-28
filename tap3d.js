@@ -12,21 +12,19 @@ const FONT_FILES = {
 };
 
 const fontCache = {};
-const loadFontFile = async (key) => {
-  const url = FONT_FILES[key] || FONT_FILES.anton;
+const sourceFor = (id) => {
+  const catalog = (window.tapFonts || {})[id];
+  if (catalog && catalog.dataUrl) return catalog.dataUrl;
+  if (catalog && catalog.url) return catalog.url;
+  return FONT_FILES[id] || FONT_FILES.anton;
+};
+
+const loadFontFile = async (id) => {
+  const url = sourceFor(id);
   if (!fontCache[url]) {
     fontCache[url] = fetch(url).then((r) => r.arrayBuffer()).then((buf) => opentype.parse(buf));
   }
   return fontCache[url];
-};
-
-const fontKeyFor = (name) => {
-  const n = String(name || "anton").toLowerCase();
-  if (n.includes("bungee")) return "bungee";
-  if (n.includes("archivo")) return "archivo-black";
-  if (n.includes("fredoka")) return "fredoka";
-  if (n.includes("outfit")) return "outfit";
-  return "anton";
 };
 
 const sampleCubic = (p0, p1, p2, p3, steps) => {
@@ -258,7 +256,7 @@ if (!canvas) {
   async function rebuildLetters() {
     clearGroup(letters);
     if (state.style !== "raised" || !state.text) return;
-    const font = await loadFontFile(fontKeyFor(state.fontName));
+    const font = await loadFontFile(state.fontName);
     const depth = Math.max(1.2, state.raise);
     const letterH = Math.min(30, 10 + state.size * 0.38);
     const raw = state.text.toUpperCase();
@@ -307,7 +305,7 @@ if (!canvas) {
   window.tapPreview = {
     setColor(hex) { state.body = hex; bodyMats.forEach((m) => m.color.set(hex)); },
     setText(text) { state.text = text || ""; rebuildLetters(); },
-    setFont(name) { state.fontName = name; rebuildLetters(); },
+    setFont(name) { state.fontName = name || "anton"; rebuildLetters(); },
     setRaise(mm) { state.raise = Number(mm) || 2; rebuildLetters(); },
     setSize(n) { state.size = Number(n) || 34; rebuildLetters(); },
     setDirection(dir) { state.direction = dir === "up" ? "up" : "down"; rebuildLetters(); },
