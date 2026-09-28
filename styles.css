@@ -124,8 +124,19 @@ h2 { font-size: clamp(28px, 4vw, 44px); letter-spacing: -.03em; margin-bottom: 1
 .sil.modern { width: 38px; border-radius: 6px; }
 .sil.wide { width: 78px; height: 110px; border-radius: 10px; }
 .sil.sculpt { width: 64px; border-radius: 50% 50% 12px 12px; }
-.builder-grid { display: grid; grid-template-columns: 1.15fr .85fr; gap: 22px; margin-top: 18px; }
+.builder-grid { display: grid; grid-template-columns: 1.15fr .85fr; gap: 22px; margin-top: 18px; align-items: start; }
 .panel, .preview-wrap { background: var(--card); border-radius: 24px; padding: 22px; box-shadow: 0 10px 28px rgba(0,0,0,.05); }
+@media (min-width: 901px) {
+  .preview-wrap {
+    position: sticky;
+    top: 96px;
+    z-index: 8;
+  }
+}
+.place-card {
+  margin-top: 16px; padding: 14px 14px 16px; border-radius: 16px; background: #faf8f5; border: 1px solid #eee7de;
+}
+.place-card h3 { font-size: 16px; margin-bottom: 4px; }
 label { display: block; font-weight: 650; margin: 14px 0 6px; }
 input, select, textarea { width: 100%; padding: 10px 12px; border: 1px solid #e4ddd4; border-radius: 12px; font: inherit; }
 .chips { display: flex; flex-wrap: wrap; gap: 8px; }
@@ -157,7 +168,7 @@ input, select, textarea { width: 100%; padding: 10px 12px; border: 1px solid #e4
 }
 .dropzone strong { font-size: 16px; }
 .dropzone span { color: var(--muted); font-weight: 500; font-size: 14px; }
-.dropzone img { max-width: 100%; max-height: 120px; border-radius: 8px; }
+.dropzone img { max-width: 100%; max-height: 120px; object-fit: contain; border-radius: 8px; }
 #logoFile { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
 .swatches { display: flex; flex-wrap: wrap; gap: 8px; }
 .swatch {
@@ -170,7 +181,7 @@ input, select, textarea { width: 100%; padding: 10px 12px; border: 1px solid #e4
 .submit { width: 100%; margin-top: 16px; }
 .status { margin-top: 10px; font-weight: 600; min-height: 1.2em; }
 .preview {
-  height: 560px; border-radius: 18px; background: #171717;
+  height: min(70vh, 620px); border-radius: 18px; background: #171717;
   display: grid; place-items: center; position: relative; overflow: hidden;
 }
 .preview canvas { width: 100%; height: 100%; display: block; touch-action: none; }
@@ -190,6 +201,7 @@ footer { padding: 28px 7% 40px; display: flex; justify-content: space-between; c
 @media (max-width: 1100px) { .steps { grid-template-columns: 1fr 1fr; } }
 @media (max-width: 900px) {
   .steps, .shape-grid, .builder-grid { grid-template-columns: 1fr; }
+  .preview-wrap { position: static; }
   .nav nav { display: none; }
   .lockup { height: 48px; }
   .hero-shot img { height: min(70vh, 620px); }
