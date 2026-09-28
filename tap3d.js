@@ -74,11 +74,17 @@ const shapesFromGlyph = (otPath) => {
   });
   return shapes;
 };
+const imageSize = (url) => new Promise((resolve) => {
+  const img = new Image();
+  img.onload = () => resolve({ w: img.naturalWidth || 1, h: img.naturalHeight || 1 });
+  img.onerror = () => resolve({ w: 1, h: 1 });
+  img.src = url;
+});
 
 const state = {
   text: "", style: "raised", color: "#111111", body: "#8A8A8A", size: 34, raise: 2, direction: "up",
   fontName: "anton", model: "models/Tap-Narrow.glb", logo: "", ready: false,
-  textY: 0, textZ: 0, textRot: 0, logoScale: 1, logoY: 0, logoZ: 0, logoRot: 0, logoFlip: 1
+  textY: 0, textZ: 0, textRot: 0, logoScale: 1, logoY: 0, logoZ: 0, logoRot: 0, logoFlip: 1, logoRaise: 2.4
 };
 
 const canvas = document.getElementById("tapCanvas");
@@ -103,6 +109,7 @@ if (!canvas) {
   let bodyMats = [];
   let bodyBox = new THREE.Box3(new THREE.Vector3(-20, 0, -20), new THREE.Vector3(0, 250, 20));
   let framed = false;
+  let logoToken = 0;
   const loader = new GLTFLoader();
   const frameTap = () => {
     const box = new THREE.Box3().setFromObject(root);
@@ -132,19 +139,46 @@ if (!canvas) {
     }
   };
   const faceBasis = (along, across) => new THREE.Matrix4().makeBasis(new THREE.Vector3(0, along, 0), new THREE.Vector3(0, 0, across), new THREE.Vector3(1, 0, 0));
-  const placeLogo = () => {
+  const placeLogo = async () => {
+    const token = ++logoToken;
     clearGroup(artGroup);
     if (!state.logo) return;
+    const dim = await imageSize(state.logo);
+    if (token !== logoToken) return;
     const tex = new THREE.TextureLoader().load(state.logo);
     tex.colorSpace = THREE.SRGBColorSpace;
-    const tall = Math.max(40, (bodyBox.max.y - bodyBox.min.y) * 0.42);
-    const wide = Math.max(18, (bodyBox.max.z - bodyBox.min.z) * 0.72);
-    const mesh = new THREE.Mesh(new THREE.PlaneGeometry(tall, wide), new THREE.MeshBasicMaterial({ map: tex, transparent: true, side: THREE.DoubleSide }));
-    mesh.quaternion.setFromRotationMatrix(faceBasis(1, 1));
-    mesh.rotateZ(THREE.MathUtils.degToRad(state.logoRot || 0));
-    mesh.scale.set((state.logoScale || 1) * (state.logoFlip || 1), state.logoScale || 1, 1);
-    mesh.position.set((Number.isFinite(bodyBox.max.x) ? bodyBox.max.x : 0) + 0.9, (bodyBox.min.y + bodyBox.max.y) / 2 + (state.logoY || 0), state.logoZ || 0);
-    artGroup.add(mesh);
+    tex.anisotropy = 8;
+    const aspect = Math.max(0.2, (dim.w || 1) / (dim.h || 1));
+    const maxH = Math.max(36, (bodyBox.max.y - bodyBox.min.y) * 0.5);
+    const maxW = Math.max(16, (bodyBox.max.z - bodyBox.min.z) * 0.88);
+    let h = maxH;
+    let w = h * aspect;
+    if (w > maxW) { w = maxW; h = w / aspect; }
+    const scale = state.logoScale || 1;
+    h *= scale; w *= scale;
+    const depth = Math.max(1.2, state.logoRaise || 2.4);
+    const plate = new THREE.Shape();
+    plate.moveTo(-h / 2, -w / 2);
+    plate.lineTo(h / 2, -w / 2);
+    plate.lineTo(h / 2, w / 2);
+    plate.lineTo(-h / 2, w / 2);
+    plate.closePath();
+    const body = new THREE.Mesh(
+      new THREE.ExtrudeGeometry(plate, { depth, steps: 1, bevelEnabled: false }),
+      new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.45, metalness: 0.04 })
+    );
+    const face = new THREE.Mesh(
+      new THREE.PlaneGeometry(h, w),
+      new THREE.MeshStandardMaterial({ map: tex, transparent: true, roughness: 0.35, metalness: 0.02, side: THREE.FrontSide })
+    );
+    face.position.z = depth + 0.05;
+    const group = new THREE.Group();
+    group.add(body);
+    group.add(face);
+    group.quaternion.setFromRotationMatrix(faceBasis(1, -1));
+    group.rotateZ(THREE.MathUtils.degToRad(state.logoRot || 0));
+    group.position.set((Number.isFinite(bodyBox.max.x) ? bodyBox.max.x : 0) + 0.4, (bodyBox.min.y + bodyBox.max.y) / 2 + (state.logoY || 0), state.logoZ || 0);
+    artGroup.add(group);
   };
   const applyBody = (gltf) => {
     clearGroup(bodyGroup); bodyMats = [];
@@ -175,7 +209,8 @@ if (!canvas) {
     const box = geo.boundingBox;
     const usableY = Math.max(40, (bodyBox.max.y - bodyBox.min.y) * 0.9);
     const usableZ = Math.max(16, (bodyBox.max.z - bodyBox.min.z) * 0.7);
-    geo.scale(Math.min(1, usableY / Math.max(box.max.x - box.min.x, 1), usableZ / Math.max(box.max.y - box.min.y, 1)), Math.min(1, usableY / Math.max(box.max.x - box.min.x, 1), usableZ / Math.max(box.max.y - box.min.y, 1)), 1);
+    const fit = Math.min(1, usableY / Math.max(box.max.x - box.min.x, 1), usableZ / Math.max(box.max.y - box.min.y, 1));
+    geo.scale(fit, fit, 1);
     const mesh = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color: new THREE.Color(state.color), roughness: 0.32, metalness: 0.04, side: THREE.DoubleSide }));
     const along = state.direction === "up" ? -1 : 1;
     mesh.quaternion.setFromRotationMatrix(faceBasis(along, along));
@@ -202,6 +237,7 @@ if (!canvas) {
       if (o.z != null) state.logoZ = Number(o.z) || 0;
       if (o.rot != null) state.logoRot = Number(o.rot) || 0;
       if (o.flip != null) state.logoFlip = Number(o.flip) || 1;
+      if (o.raise != null) state.logoRaise = Number(o.raise) || 2.4;
       placeLogo();
     },
     capture() { renderer.render(scene, camera); return canvas.toDataURL("image/png"); }
