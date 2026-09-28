@@ -14,9 +14,9 @@ const handle = document.getElementById("handle");
 const status = document.getElementById("status");
 const printZone = document.getElementById("printZone");
 let letterColor = "#111111";
+let logoColor = "#111111";
 let letterDir = "up";
 let handleShape = "narrow";
-let logoFlip = 1;
 const tap3 = () => window.tapPreview || {};
 const on = (id, ev, fn) => {
   const el = document.getElementById(id);
@@ -33,6 +33,7 @@ const markSwatch = (root, btn) => {
 };
 
 const raiseMm = () => (Number(document.getElementById("raise").value) / 10).toFixed(1);
+const logoRaiseMm = () => (Number((document.getElementById("logoRaise") || {}).value || 20) / 10).toFixed(1);
 
 const applyRaise = () => {
   const mm = Number(raiseMm());
@@ -59,15 +60,19 @@ const applyLogoPlace = () => {
   const y = val("logoY", 0);
   const z = val("logoZ", 0);
   const rot = val("logoRot", 0);
+  const raise = Number(logoRaiseMm());
   const sEl = document.getElementById("logoSizeVal");
   const yEl = document.getElementById("logoYVal");
   const zEl = document.getElementById("logoZVal");
   const rEl = document.getElementById("logoRotVal");
+  const raiseEl = document.getElementById("logoRaiseVal");
   if (sEl) sEl.textContent = Math.round(scale * 100) + "%";
   if (yEl) yEl.textContent = y;
   if (zEl) zEl.textContent = z;
   if (rEl) rEl.textContent = rot + "\u00b0";
-  if (tap3().setLogoPlace) tap3().setLogoPlace({ scale, y, z, rot, flip: logoFlip });
+  if (raiseEl) raiseEl.textContent = raise.toFixed(1) + " mm";
+  if (tap3().setLogoPlace) tap3().setLogoPlace({ scale, y, z, rot, raise });
+  if (tap3().setLogoColor) tap3().setLogoColor(logoColor);
 };
 
 const renderLetters = () => {
@@ -114,9 +119,11 @@ const showLogoUi = (url) => {
   const thumb = document.getElementById("logoPreview");
   const clear = document.getElementById("clearLogo");
   const place = document.getElementById("logoPlace");
+  const tools = document.getElementById("logoTools");
   if (thumb) { thumb.src = url; thumb.hidden = !url; }
   if (clear) clear.hidden = !url;
   if (place) place.hidden = !url;
+  if (tools) tools.hidden = !url;
   if (printZone) printZone.classList.toggle("on", !!url);
 };
 
@@ -137,13 +144,6 @@ const clearLogo = () => {
 
 on("logoFile", "change", (e) => applyLogoFile(e.target.files && e.target.files[0]));
 on("clearLogo", "click", clearLogo);
-on("tryVoltage", "click", () => {
-  const url = "images/voltage.svg";
-  if (tap3().setLogo) tap3().setLogo(url);
-  showLogoUi(url);
-  applyLogoPlace();
-  showMode("upload");
-});
 
 const dropzone = document.getElementById("dropzone");
 if (dropzone) {
@@ -163,17 +163,23 @@ if (dropzone) {
 }
 
 ["textY", "textZ", "textRot"].forEach((id) => on(id, "input", applyTextPlace));
-["logoSize", "logoY", "logoZ", "logoRot"].forEach((id) => on(id, "input", applyLogoPlace));
-on("logoFlip", "click", () => { logoFlip *= -1; applyLogoPlace(); });
+["logoSize", "logoY", "logoZ", "logoRot", "logoRaise"].forEach((id) => on(id, "input", applyLogoPlace));
 on("textReset", "click", () => {
   ["textY", "textZ", "textRot"].forEach((id) => { const el = document.getElementById(id); if (el) el.value = 0; });
   applyTextPlace();
 });
 on("logoReset", "click", () => {
-  const defaults = { logoSize: 100, logoY: 0, logoZ: 0, logoRot: 0 };
+  const defaults = { logoSize: 100, logoY: 0, logoZ: 0, logoRot: 0, logoRaise: 20 };
   Object.keys(defaults).forEach((id) => { const el = document.getElementById(id); if (el) el.value = defaults[id]; });
-  logoFlip = 1;
   applyLogoPlace();
+});
+
+on("logoColors", "click", (e) => {
+  const btn = e.target.closest(".swatch");
+  if (!btn) return;
+  markSwatch(e.currentTarget, btn);
+  logoColor = btn.dataset.color;
+  if (tap3().setLogoColor) tap3().setLogoColor(logoColor);
 });
 
 const shrinkShot = (dataUrl) => new Promise((resolve) => {
@@ -310,10 +316,12 @@ on("quoteForm", "submit", async (e) => {
       letterDir: letterDir === "up" ? "top to bottom" : "bottom to top",
       font: (document.getElementById("fontSelect") || {}).value || "anton",
       letterRaise: raiseMm() + " mm",
+      logoColor,
+      logoRaise: logoRaiseMm() + " mm",
       qty: document.getElementById("qty").value,
       tapText: document.getElementById("tapText").value.trim(),
       textPlace: [val("textY", 0), val("textZ", 0), val("textRot", 0)].join(","),
-      logoPlace: [val("logoSize", 100), val("logoY", 0), val("logoZ", 0), val("logoRot", 0), logoFlip].join(",")
+      logoPlace: [val("logoSize", 100), val("logoY", 0), val("logoZ", 0), val("logoRot", 0)].join(",")
     }, (document.getElementById("logoFile") || {}).files && document.getElementById("logoFile").files[0], status);
   } catch (err) {
     status.textContent = err.message;
