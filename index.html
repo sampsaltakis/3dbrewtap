@@ -158,13 +158,19 @@
           <label for="tapText">Text on handle</label>
           <input id="tapText" type="text" maxlength="24" />
           <label for="fontSelect">Typeface</label>
-          <select id="fontSelect">
-            <option value="anton">Anton</option>
-            <option value="bungee">Bungee</option>
-            <option value="archivo-black">Archivo Black</option>
-            <option value="fredoka">Fredoka</option>
-            <option value="outfit">Outfit</option>
-          </select>
+          <select id="fontSelect"></select>
+          <button type="button" class="chip font-toggle" id="toggleFonts">Manage typefaces</button>
+          <div class="font-manager" id="fontManager" hidden>
+            <p class="hint">Remove a face, upload a .ttf/.otf, or add a stock face. Uploaded files stay on this computer.</p>
+            <ul class="font-list" id="fontList"></ul>
+            <label for="fontFile">Upload font file</label>
+            <input id="fontFile" type="file" accept=".ttf,.otf,font/ttf,font/otf" />
+            <label for="stockFont">Add a stock face</label>
+            <div class="font-add-row">
+              <select id="stockFont"></select>
+              <button type="button" class="chip" id="addStockFont">Add</button>
+            </div>
+          </div>
           <label>Letter size <span id="sizeVal">34</span></label>
           <input id="size" type="range" min="18" max="64" value="34" />
           <label>Height off tap <span id="raiseVal">2.0 mm</span></label>
