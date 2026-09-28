@@ -45,12 +45,73 @@ const renderLetters = () => {
   if (tap3().setDirection) tap3().setDirection(letterDir);
 };
 
+const showMode = (mode) => {
+  const textOn = mode === "text";
+  document.getElementById("modeText").classList.toggle("on", textOn);
+  document.getElementById("modeUpload").classList.toggle("on", !textOn);
+  document.getElementById("textPanel").hidden = !textOn;
+  document.getElementById("uploadPanel").hidden = textOn;
+};
+
+on("modeText", "click", () => showMode("text"));
+on("modeUpload", "click", () => showMode("upload"));
+
+on("fontTiles", "click", (e) => {
+  const btn = e.target.closest(".font-tile");
+  if (!btn) return;
+  document.querySelectorAll(".font-tile").forEach((t) => t.classList.remove("on"));
+  btn.classList.add("on");
+  const id = btn.dataset.font;
+  const hidden = document.getElementById("fontSelect");
+  if (hidden) hidden.value = id;
+  if (tap3().setFont) tap3().setFont(id);
+});
+
 const fileToDataUrl = (file) => new Promise((resolve, reject) => {
   const reader = new FileReader();
   reader.onerror = () => reject(new Error("Could not read the file."));
   reader.onload = () => resolve(String(reader.result || ""));
   reader.readAsDataURL(file);
 });
+
+const applyLogoFile = async (file) => {
+  if (!file) return;
+  const url = await fileToDataUrl(file);
+  const thumb = document.getElementById("logoPreview");
+  const clear = document.getElementById("clearLogo");
+  if (thumb) { thumb.src = url; thumb.hidden = false; }
+  if (clear) clear.hidden = false;
+  if (tap3().setLogo) tap3().setLogo(url);
+};
+
+const clearLogo = () => {
+  const input = document.getElementById("logoFile");
+  const thumb = document.getElementById("logoPreview");
+  const clear = document.getElementById("clearLogo");
+  if (input) input.value = "";
+  if (thumb) { thumb.removeAttribute("src"); thumb.hidden = true; }
+  if (clear) clear.hidden = true;
+  if (tap3().setLogo) tap3().setLogo("");
+};
+
+on("logoFile", "change", (e) => applyLogoFile(e.target.files && e.target.files[0]));
+on("clearLogo", "click", clearLogo);
+const dropzone = document.getElementById("dropzone");
+if (dropzone) {
+  ["dragenter", "dragover"].forEach((ev) => dropzone.addEventListener(ev, (e) => { e.preventDefault(); dropzone.classList.add("on"); }));
+  ["dragleave", "drop"].forEach((ev) => dropzone.addEventListener(ev, (e) => { e.preventDefault(); dropzone.classList.remove("on"); }));
+  dropzone.addEventListener("drop", (e) => {
+    const file = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+    if (!file) return;
+    const input = document.getElementById("logoFile");
+    if (input) {
+      const list = new DataTransfer();
+      list.items.add(file);
+      input.files = list.files;
+    }
+    applyLogoFile(file);
+  });
+}
 
 const shrinkShot = (dataUrl) => new Promise((resolve) => {
   const img = new Image();
@@ -164,10 +225,6 @@ on("printArea", "change", (e) => {
 
 on("tapText", "input", renderLetters);
 
-on("fontSelect", "change", (e) => {
-  if (tap3().setFont) tap3().setFont(e.target.value);
-});
-
 on("size", "input", (e) => {
   document.getElementById("sizeVal").textContent = e.target.value;
   if (tap3().setSize) tap3().setSize(e.target.value);
@@ -196,7 +253,7 @@ on("quoteForm", "submit", async (e) => {
       shape: handleShape,
       letterStyle: "raised",
       letterDir: letterDir === "up" ? "top to bottom" : "bottom to top",
-      font: document.getElementById("fontSelect").value,
+      font: (document.getElementById("fontSelect") || {}).value || "anton",
       letterRaise: raiseMm() + " mm",
       qty: document.getElementById("qty").value,
       tapText: document.getElementById("tapText").value.trim()
