@@ -170,28 +170,21 @@ if (!canvas) {
     const aspect = Math.max(0.2, (tinted.w || 1) / (tinted.h || 1));
     const maxH = Math.max(36, (bodyBox.max.y - bodyBox.min.y) * 0.48);
     const maxW = Math.max(16, (bodyBox.max.z - bodyBox.min.z) * 0.86);
-    let h = maxH;
-    let w = h * aspect;
-    if (w > maxW) { w = maxW; h = w / aspect; }
+    let along = maxH;
+    let across = along * aspect;
+    if (across > maxW) { across = maxW; along = across / aspect; }
     const scale = state.logoScale || 1;
-    h *= scale; w *= scale;
-    const depth = Math.max(0.8, state.logoRaise || 2);
-    const mesh = new THREE.Mesh(
-      new THREE.PlaneGeometry(h, w),
-      new THREE.MeshStandardMaterial({
-        map: tex,
-        color: new THREE.Color(state.logoColor || "#111111"),
-        transparent: true,
-        roughness: 0.32,
-        metalness: 0.04,
-        side: THREE.DoubleSide,
-        depthWrite: false
-      })
-    );
-    const along = 1;
-    mesh.quaternion.setFromRotationMatrix(faceBasis(along, -along));
+    along *= scale;
+    across *= scale;
+    const depth = Math.max(1.2, state.logoRaise || 2);
+    const ink = new THREE.Color(state.logoColor || "#111111");
+    const side = new THREE.MeshStandardMaterial({ color: ink, roughness: 0.32, metalness: 0.04 });
+    const face = new THREE.MeshStandardMaterial({ map: tex, color: ink, transparent: true, roughness: 0.32, metalness: 0.04 });
+    const mesh = new THREE.Mesh(new THREE.BoxGeometry(along, across, depth), [side, side, side, side, face, side]);
+    mesh.quaternion.setFromRotationMatrix(faceBasis(1, 1));
     mesh.rotateZ(THREE.MathUtils.degToRad(state.logoRot || 0));
-    mesh.position.set((Number.isFinite(bodyBox.max.x) ? bodyBox.max.x : 0) + depth, (bodyBox.min.y + bodyBox.max.y) / 2 + (state.logoY || 0), state.logoZ || 0);
+    const faceX = (Number.isFinite(bodyBox.max.x) ? bodyBox.max.x : 0) + depth / 2;
+    mesh.position.set(faceX, (bodyBox.min.y + bodyBox.max.y) / 2 + (state.logoY || 0), state.logoZ || 0);
     artGroup.add(mesh);
   };
   const applyBody = (gltf) => {
@@ -226,8 +219,8 @@ if (!canvas) {
     const fit = Math.min(1, usableY / Math.max(box.max.x - box.min.x, 1), usableZ / Math.max(box.max.y - box.min.y, 1));
     geo.scale(fit, fit, 1);
     const mesh = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color: new THREE.Color(state.color), roughness: 0.32, metalness: 0.04, side: THREE.DoubleSide }));
-    const along = state.direction === "up" ? -1 : 1;
-    mesh.quaternion.setFromRotationMatrix(faceBasis(along, along));
+    const dir = state.direction === "up" ? -1 : 1;
+    mesh.quaternion.setFromRotationMatrix(faceBasis(dir, dir));
     mesh.rotateZ(THREE.MathUtils.degToRad(state.textRot || 0));
     mesh.position.set((Number.isFinite(bodyBox.max.x) ? bodyBox.max.x : 0) + depth / 2, (bodyBox.min.y + bodyBox.max.y) / 2 + (state.textY || 0), state.textZ || 0);
     letters.add(mesh);
